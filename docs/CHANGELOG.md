@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2 — 2026-11-15
+
+- Distinguish smithing templates by their translated upgrade or armor trim, banner patterns by their design, and music discs by their track.
+- Automatically qualify duplicate item names from installed mods without hiding registry entries; searches include both the original label and the distinguishing detail.
+- Rebuild these labels when the server item registry or mod languages change. No Minecraft restart is required for this panel-only fix.
+
 ## 1.0.1 — 2026-11-14
 
 - Remember completion of the first-run tutorial on the panel host, including new logins, browser changes and panel restarts. Manual replay remains available.

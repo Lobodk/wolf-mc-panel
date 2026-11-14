@@ -50,6 +50,64 @@ test('Spanish names, accent-insensitive terms, spawn-egg aliases and IDs search 
   assert.equal(await catalog.hasItem('minecraft:diamond\nkill @a'), false);
 }));
 
+test('Tooltip variants distinguish templates, banner patterns and music discs and remain searchable', async () => fixture(async ({ make, translations, save, snapshot }) => {
+  const fresh = snapshot();
+  for (const [suffix, name, detail, ending] of [
+    ['netherite_upgrade_smithing_template', 'Molde de herrería', 'Mejora de netherita', '.new'],
+    ['wild_armor_trim_smithing_template', 'Molde de herrería', 'Diseño de armadura salvaje', '.new'],
+    ['creeper_banner_pattern', 'Diseño de estandarte', 'Estampado de creeper', '.desc'],
+    ['music_disc_13', 'Disco de música', 'C418 - 13', '.desc'],
+  ]) {
+    const key = 'item.minecraft.' + suffix;
+    translations.es_es[key] = name; translations.es_es[key + ending] = detail;
+    fresh.items.push({ id: 'minecraft:' + suffix, translationKey: key, fallbackName: name });
+  }
+  save(fresh); const catalog = make();
+  assert.equal((await catalog.search({ q: 'molde netherita' })).items[0].name, 'Molde de herrería — Mejora de netherita');
+  assert.equal((await catalog.search({ q: 'molde salvaje' })).total, 1);
+  assert.equal((await catalog.search({ q: 'estandarte creeper' })).total, 1);
+  assert.equal((await catalog.search({ q: 'disco C418 13' })).total, 1);
+  assert.equal((await catalog.search()).catalogTotal, 10);
+}));
+
+test('Duplicate translated names preserve every mod item, refresh automatically and have stable unique labels', async () => fixture(async ({ make, translations, save, snapshot, advance }) => {
+  const fresh = snapshot();
+  for (const id of ['example:pot_black', 'example:pot_white', 'example:a_b', 'example:a/b', 'other:pot']) {
+    translations.es_es['item.' + id.replace(':', '.')] = 'Maceta';
+    fresh.items.push({ id, translationKey: 'item.' + id.replace(':', '.') });
+  }
+  fresh.mods.push({ id: 'other', name: 'Example Furniture' }); // Same display name, different namespace.
+  save(fresh); const catalog = make();
+  const result = await catalog.search({ q: 'maceta' });
+  assert.equal(result.total, 5);
+  assert.equal(new Set(result.items.map(item => normalize(item.name))).size, 5);
+  for (const item of result.items) {
+    assert.equal(await catalog.hasItem(item.id), true);
+    assert.equal((await catalog.search({ q: item.id })).items.some(found => found.id === item.id), true);
+    assert.equal(item.name.startsWith('Maceta — '), true);
+    assert.equal('_search' in item, false);
+  }
+  fresh.items.reverse(); advance(); save(fresh); await catalog.refresh();
+  assert.deepEqual((await catalog.search({ q: 'maceta' })).items, result.items);
+  fresh.items.push({ id: 'example:pot_new', translationKey: 'item.example.pot_new' });
+  translations.es_es['item.example.pot_new'] = 'Maceta';
+  // New registry entries are reflected without a panel restart, even with cached languages.
+  advance(); save(fresh);
+  assert.equal(await catalog.hasItem('example:pot_new'), true);
+}));
+
+test('Same-mod collisions use readable identifiers and missing tooltip translations remain usable', async () => fixture(async ({ make, translations, save, snapshot }) => {
+  const fresh = snapshot();
+  for (const suffix of ['black_pot', 'white_pot']) {
+    translations.es_es['item.example.' + suffix] = 'Maceta';
+    fresh.items.push({ id: 'example:' + suffix, translationKey: 'item.example.' + suffix });
+  }
+  fresh.items.push({ id: 'minecraft:unknown_smithing_template', fallbackName: 'Smithing Template' });
+  save(fresh); const catalog = make();
+  assert.equal((await catalog.search({ q: 'maceta black' })).items[0].name, 'Maceta — Black pot');
+  assert.equal((await catalog.search({ q: 'unknown_smithing_template' })).items[0].name, 'Smithing Template');
+}));
+
 test('Cached translations are not rescanned for every keystroke, and registry contents refresh atomically', async () => fixture(async ({ make, calls, save, snapshot, advance }) => {
   const catalog = make(); await catalog.search({ q: 'h' }); await catalog.search({ q: 'hu' }); await catalog.search({ q: 'hue' });
   assert.deepEqual(calls, { jar: 1, vanilla: 1 });

@@ -1,5 +1,9 @@
 # Release verification
 
+## 1.0.2
+
+67 automated checks pass, including translated tooltip variants, duplicate labels across mods, colliding mod display names, registry refresh, stable ordering and identifier lookup. A real 5,787-item server catalog retained every entry and went from 93 duplicate-name groups to zero. Installer lifecycle validation and SHA-256 receipts are attached to the release. No Minecraft world lifecycle test was repeated for this naming-only change.
+
 ## 1.0.1
 
 64 automated checks pass on Windows, including regression coverage for tutorial persistence, guide acknowledgement, branding changes, new browsers, blocked browser storage, repeated authentication events, cancelled timers and arrow placement on desktop/narrow screens. The actual browser review covered opening the guide, returning to the panel, another login, the updated arrow and a 620-pixel responsive viewport. Installer validation also checks that the completion flags survive a reinstall.

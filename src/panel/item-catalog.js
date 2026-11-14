@@ -154,6 +154,47 @@ function displayName(text) {
     .replace(/\u0001/g, '%').replace(/\u00a7[0-9a-fk-or]/gi, '').replace(/[\x00-\x1f]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function variantLabel(id, key, languages, spanish) {
+  // These items deliberately share their base translation; Minecraft shows the
+  // distinguishing line as a tooltip rather than part of the registered name.
+  const keys = [];
+  if (id.endsWith('_smithing_template')) keys.push(key + '.new');
+  if (id.endsWith('_banner_pattern')) keys.push(key + '.new', key + '.desc');
+  const disc = /^minecraft:music_disc_(.+)$/.exec(id);
+  if (disc) keys.push(key + '.desc', 'jukebox_song.minecraft.' + disc[1]);
+  for (const locale of spanish ? ['es_es', 'es_mx'] : ['en_us', 'es_es', 'es_mx']) {
+    for (const candidate of keys) {
+      const text = languages[locale][candidate];
+      if (text && !/%(?:\d+\$)?[-+#0 ,(]*\d*(?:\.\d+)?[a-z]/i.test(text.replace(/%%/g, ''))) return displayName(text);
+    }
+  }
+  return '';
+}
+
+function distinguishNames(items) {
+  const groups = new Map();
+  for (const item of items) {
+    const key = normalize(item.name);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    const namespaces = new Set(group.map(item => item.id.split(':')[0]));
+    for (const item of group) item.name += ' — ' + (namespaces.size > 1 ? item.modName : niceId(item.id));
+  }
+  // A translated mod name or humanized identifier can itself collide. Keep every
+  // registry entry and guarantee a stable, distinct label even in that case.
+  const used = new Set();
+  for (const item of [...items].sort((a, b) => a.id.localeCompare(b.id))) {
+    while (used.has(normalize(item.name))) item.name += ' [' + item.id + ']';
+    used.add(normalize(item.name));
+    item._name = normalize(item.name);
+    item._search += ' ' + item._name;
+  }
+  return items;
+}
+
 function createItemCatalog({ serverDir, minecraftVersion = '26.3', languageLoader = readJarLanguages, vanillaLoader = loadVanillaSpanish,
     now = Date.now, checkIntervalMs = 3000 } = {}) {
   if (!serverDir) throw new Error('serverDir requerido');
@@ -211,6 +252,8 @@ function createItemCatalog({ serverDir, minecraftVersion = '26.3', languageLoade
       const english = languages.en_us[key] || languages.en_us[blockKey];
       const fallback = typeof item.fallbackName === 'string' && item.fallbackName !== key ? item.fallbackName : '';
       let name = displayName(spanish || english || fallback || niceId(item.id)) || niceId(item.id);
+      const detail = variantLabel(item.id, key, languages, spanish);
+      if (detail && normalize(detail) !== normalize(name)) name += ' — ' + detail;
       const spawnEgg = /(?:_|:)spawn_egg$|_spawn_egg$/.test(item.id);
       if (spawnEgg && /^Generar\s+/i.test(name)) name = name.replace(/^Generar\s+/i, 'Huevo generador de ');
       const namespace = item.id.split(':')[0], modName = mods.get(namespace) || (namespace === 'minecraft' ? 'Minecraft' : namespace);
@@ -218,7 +261,7 @@ function createItemCatalog({ serverDir, minecraftVersion = '26.3', languageLoade
       resolved.set(item.id, { ...data, _name: normalize(name), _search: normalize([name, english, fallback, item.id, modName,
         spawnEgg ? 'huevo generador huevo de generacion spawn egg' : ''].filter(Boolean).join(' ')) });
     }
-    const items = [...resolved.values()].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base', numeric: true }) || a.id.localeCompare(b.id));
+    const items = distinguishNames([...resolved.values()]).sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base', numeric: true }) || a.id.localeCompare(b.id));
     let pendingRestart = false;
     if (Array.isArray(snapshot.modFiles)) {
       const previous = [...snapshot.modFiles].sort((a, b) => a.name.localeCompare(b.name));

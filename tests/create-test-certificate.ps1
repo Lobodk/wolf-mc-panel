@@ -2,15 +2,25 @@ param([Parameter(Mandatory=$true)][string]$JwkFile,[Parameter(Mandatory=$true)][
 $ErrorActionPreference='Stop'
 $jwk=Get-Content -LiteralPath $JwkFile -Raw | ConvertFrom-Json
 function Decode-UrlBase64([string]$Value){$normalized=$Value.Replace('-','+').Replace('_','/');$normalized=$normalized.PadRight($normalized.Length+((4-$normalized.Length%4)%4),'=');return [Convert]::FromBase64String($normalized)}
+function Decode-RsaField([string]$Value,[int]$Length){
+ $bytes=Decode-UrlBase64 $Value
+ if($bytes.Length -gt $Length){throw 'RSA field exceeds its expected width'}
+ $padded=[byte[]]::new($Length)
+ [Array]::Copy($bytes,0,$padded,$Length-$bytes.Length,$bytes.Length)
+ return $padded
+}
 $parameters=[System.Security.Cryptography.RSAParameters]::new()
 $parameters.Modulus=Decode-UrlBase64 $jwk.n
 $parameters.Exponent=Decode-UrlBase64 $jwk.e
-$parameters.D=Decode-UrlBase64 $jwk.d
-$parameters.P=Decode-UrlBase64 $jwk.p
-$parameters.Q=Decode-UrlBase64 $jwk.q
-$parameters.DP=Decode-UrlBase64 $jwk.dp
-$parameters.DQ=Decode-UrlBase64 $jwk.dq
-$parameters.InverseQ=Decode-UrlBase64 $jwk.qi
+# JWK integers omit leading zero bytes; Windows requires fixed-width RSA fields.
+$width=$parameters.Modulus.Length
+$halfWidth=[int][Math]::Ceiling($width/2)
+$parameters.D=Decode-RsaField $jwk.d $width
+$parameters.P=Decode-RsaField $jwk.p $halfWidth
+$parameters.Q=Decode-RsaField $jwk.q $halfWidth
+$parameters.DP=Decode-RsaField $jwk.dp $halfWidth
+$parameters.DQ=Decode-RsaField $jwk.dq $halfWidth
+$parameters.InverseQ=Decode-RsaField $jwk.qi $halfWidth
 $rsa=[System.Security.Cryptography.RSA]::Create()
 try{
  $rsa.ImportParameters($parameters)
