@@ -1,0 +1,17 @@
+# Release verification — 1.0.0
+
+Prepared on 2026-11-14 for Windows x64. Test evidence is specific to the checked configuration, not a guarantee for every Minecraft version, modpack or network.
+
+| Check | Evidence / scope |
+| --- | --- |
+| Automated suite | 54 passing tests, zero failures and zero skips in the Windows source/build checks. Includes authentication and session revocation, origin/host validation, ZIP safety, staging, server isolation/recovery, MOTD round trips and five translation catalogs. |
+| Real Minecraft lifecycle | Official vanilla Minecraft 26.3, Java 25, isolated flat world and separate loopback game port. Created and started the server, placed and saved a diamond block, backed up while online, changed it to gold, restored the backup, restarted and confirmed the diamond block returned. No existing user world was used. |
+| Real HTTPS transport | Started the official Caddy runtime and connected through TLS using an isolated test certificate explicitly trusted by that request. Verified certificate validation, HTTPS login, Secure/HttpOnly/SameSite cookies, rejection of the bootstrap key after password setup, backend/origin restrictions and authenticated requests. No system certificate-store change or TLS bypass. |
+| Installer lifecycle | Per-user Windows install, EXE launch, empty initial server list, personal password creation, reinstall preserving password/preferences/data, EXE stop and uninstall preserving data. A release attachment records the actual installer SHA-256 and results. |
+| UI review | Real in-app-browser review of overview, creation wizard, appearance, performance, initial tour and home; switching English, German, French, Turkish and Portuguese controls, then returning to Spanish. Screenshots use isolated demonstration data. |
+| Existing installation | Applied the shared UI/auth/hosting improvements to the creator's separate personal panel. Its protected configuration files were verified byte-for-byte unchanged; the original Minecraft Java process stayed running. No private data from that installation is included here. |
+| Distribution check | Source syntax, excluded generated/private state and local-profile/private-key pattern checks. Runtime downloads have pinned or official checksum checks. These checks are not a full secret-detection or penetration-test certification. |
+
+The supplied GitHub Actions workflow repeats source/build checks and installer install/reinstall/uninstall on a fresh hosted Windows runner. Its current status is shown in the repository's Actions tab; a workflow definition alone is not evidence that a run passed.
+
+Not claimed: an independent security audit, code signing, tests of every historical loader/Minecraft/mod combination, public certificate issuance on every operator network, full mod/world conversion across versions, or worldwide legal certification. External provider quotas and author download restrictions remain outside the panel's control.

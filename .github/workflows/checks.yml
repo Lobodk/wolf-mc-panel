@@ -1,0 +1,54 @@
+name: Windows release checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.3'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Prepare verified build tools
+        shell: pwsh
+        run: |
+          $tools=Join-Path $env:RUNNER_TEMP 'wolf-build-tools'
+          New-Item -ItemType Directory -Force -Path $tools | Out-Null
+          $nodeArchive=Join-Path $tools 'node.zip'
+          Invoke-WebRequest 'https://nodejs.org/dist/v24.22.3/node-v24.22.3-win-x64.zip' -OutFile $nodeArchive
+          if((Get-FileHash $nodeArchive -Algorithm SHA256).Hash.ToLower() -ne 'e612af99f626ab415ea225af6bce5c971feb448cb5cae250bb1c3fa50c5f7d9f'){throw 'Node checksum mismatch'}
+          Expand-Archive $nodeArchive -DestinationPath $tools
+          $inno=Join-Path $tools 'innosetup.exe'
+          Invoke-WebRequest 'https://github.com/jrsoftware/issrc/releases/download/is-7_1_1/innosetup-7.1.1-x64.exe' -OutFile $inno
+          if((Get-FileHash $inno -Algorithm SHA256).Hash.ToLower() -ne '8a5a6711c3766a6e5fb74f280ba0e3551e719ce94538d901fdbd1f8f9920b3f0'){throw 'Inno Setup checksum mismatch'}
+          $innoDir=Join-Path $tools 'InnoSetup'
+          $process=Start-Process -FilePath $inno -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',('/DIR="'+$innoDir+'"') -WindowStyle Hidden -Wait -PassThru
+          if($process.ExitCode -ne 0){throw 'Build-tool installation failed'}
+          "WOLF_BUILD_TOOLS=$tools" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Build and test source, backup ZIPs and HTTPS
+        shell: pwsh
+        run: |
+          ./scripts/build-windows.ps1 -Iscc (Join-Path $env:WOLF_BUILD_TOOLS 'InnoSetup/ISCC.exe') -NodeDirectory (Join-Path $env:WOLF_BUILD_TOOLS 'node-v24.22.3-win-x64') -JavaHome $env:JAVA_HOME
+      - name: Install, sign in, reinstall and uninstall without losing data
+        shell: pwsh
+        run: |
+          $env:WOLF_INSTALLER_RECEIPT=Join-Path $PWD 'dist/installer-validation.json'
+          node tests/installer-smoke.cjs
+          if($LASTEXITCODE -ne 0){throw 'Installer lifecycle test failed'}
+      - name: Preserve build and verification artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wolf-mc-panel-windows-x64
+          path: |
+            dist/WolfMCPanel-Setup-*-windows-x64.exe
+            dist/SHA256SUMS.txt
+            dist/installer-validation.json
+          retention-days: 14
+# Publishing is a deliberate separate action. Pull requests cannot publish.

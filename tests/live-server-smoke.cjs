@@ -1,0 +1,31 @@
+'use strict';
+// Explicit opt-in: downloads the official server and creates a disposable flat world.
+const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),net=require('node:net'),assert=require('node:assert/strict');
+const {start}=require('../src/main.cjs'),{createPanelInstance}=require('../src/panel/server'),{createServerManager}=require('../src/panel/server-manager'),{validateIcon}=require('../src/panel/server-features');
+const wait=ms=>new Promise(r=>setTimeout(r,ms)),owned=new Set();let app,cookie='',serverId='',success=false;
+const root=path.resolve(process.env.WOLF_QA_DIR||path.join(os.tmpdir(),'wolf-live-'+Date.now())),javaHome=process.env.WOLF_JAVA_HOME;
+const receipt={created:false,started:false,worldSaved:false,backupCreated:false,restored:false,restarted:false,originalServersUsed:false};
+function phase(value){console.log(JSON.stringify({phase:value,at:new Date().toISOString()}));fs.writeFileSync(path.join(root,'qa-status.json'),JSON.stringify({phase:value,...receipt},null,2));}
+async function api(route,method='GET',body,selected=true){const r=await fetch(app.address.url+route,{method,headers:{Cookie:cookie,'Content-Type':'application/json',...(selected&&serverId?{'X-Server-Id':serverId}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(180000)});const data=await r.json();if(!r.ok)throw Error(data.error||'HTTP '+r.status);if(r.headers.get('set-cookie'))cookie=r.headers.get('set-cookie').split(';')[0];return data;}
+async function command(command){return (await api('api/command','POST',{command})).result;}
+async function ready(){for(let i=0;i<180;i++){try{await command('list');return;}catch{}await wait(1000);}throw Error('Test Minecraft did not become ready.');}
+async function launch(){for(let i=0;i<60;i++){try{await api('api/server/restart','POST',{});await ready();return;}catch(error){if(!/Java sigue/.test(error.message))throw error;await wait(1000);}}throw Error('Previous test Java did not stop.');}
+(async()=>{
+ if(process.env.WOLF_ACCEPT_MINECRAFT_EULA!=='1')throw Error('Read the Minecraft EULA before opting in with WOLF_ACCEPT_MINECRAFT_EULA=1.');
+ if(!javaHome||!fs.existsSync(path.join(javaHome,'bin/java.exe')))throw Error('WOLF_JAVA_HOME must point to an installed JDK.');
+ if(fs.existsSync(root))throw Error('The QA directory already exists; no existing data was changed.');fs.mkdirSync(root,{recursive:true});
+ const code=path.join(root,'code/panel');fs.mkdirSync(path.join(code,'tools'),{recursive:true});fs.copyFileSync(path.resolve('src/panel/tools/registry-agent.jar'),path.join(code,'tools/registry-agent.jar'));fs.copyFileSync(path.resolve('src/panel/extract-runtime.ps1'),path.join(code,'extract-runtime.ps1'));fs.symlinkSync(path.resolve(javaHome),path.join(root,'code/runtime'),'junction');
+ const factory=options=>{if(options?.launch){const original=options.launch;options={...options,launch:async()=>{const child=await original();owned.add(child);return child;}};}return createPanelInstance(options||{serverDir:path.join(root,'control'),appDataDir:root,panelToken:'wolf-demo-local-test-only'});};
+ app=await start({dataDir:root,port:Number(process.env.WOLF_QA_PANEL_PORT)||8898,legacy:{serverDir:path.join(root,'control'),codeDir:code,createPanelInstance:factory,createServerManager:options=>createServerManager({...options,codeDir:code,dataDir:root,includeLegacy:false}),validateIcon,preferences:{name:'Wolf MC Panel',icon:''},hosting:{mode:'local'}}});
+ await api('api/login','POST',{token:'wolf-demo-local-test-only'},false);await api('api/app/password','PUT',{current:'wolf-demo-local-test-only',password:'Wolf-Demo-Access-2026'},false);
+ phase('Creating official vanilla server');const created=await api('api/servers','POST',{name:'Servidor de demostración',minecraftVersion:process.env.WOLF_QA_MC||'26.3',loader:'vanilla',memoryMb:1024,serverPort:Number(process.env.WOLF_QA_GAME_PORT)||25620,externalPort:Number(process.env.WOLF_QA_GAME_PORT)||25620,bindAddress:'127.0.0.1',publicHost:'play.example.org',acceptEula:true},false);serverId=created.server.id;
+ for(let i=0;i<360;i++){const job=await api('api/server-jobs/'+created.jobId,'GET',null,false);if(job.done){if(!job.ok)throw Error(job.error);break;}if(i===359)throw Error('Official download timed out');await wait(1000);}
+ receipt.created=true;const record=JSON.parse(fs.readFileSync(path.join(root,'servers.json'),'utf8')).find(r=>r.id===serverId),properties=path.join(record.directory,'server.properties');fs.appendFileSync(properties,'\nlevel-type=minecraft:flat\ngenerate-structures=false\nview-distance=4\nsimulation-distance=4\nmax-tick-time=120000\n');fs.appendFileSync(path.join(record.directory,'user_jvm_args.txt'),'\n-XX:ActiveProcessorCount=2\n');
+ phase('Starting isolated Minecraft');await launch();receipt.started=true;await command('forceload add 0 0');await wait(3000);await command('setblock 0 80 0 minecraft:diamond_block');await command('save-all flush');receipt.worldSaved=true;
+ phase('Creating backup while Minecraft is running');const backup=await api('api/backups/manual','POST',{});assert.ok(backup.backup.bytes>0);receipt.backupCreated=true;
+ await command('setblock 0 80 0 minecraft:gold_block');await command('save-all flush');phase('Restoring backup while Minecraft is running');await api('api/backups/restore','POST',{name:backup.backup.name});receipt.restored=true;
+ phase('Restarting restored world');await launch();const result=await command('execute if block 0 80 0 minecraft:diamond_block');assert.match(result,/passed|count: 1|correcto/i);receipt.restarted=true;
+ const stat=await fs.promises.stat(path.join(record.directory,'world/level.dat'));assert.ok(stat.size>0);success=true;phase('Ready for screenshots');fs.writeFileSync(path.join(root,'qa-result.json'),JSON.stringify({...receipt,panelUrl:app.address.url,serverId,version:record.minecraftVersion,javaMajor:record.javaMajor},null,2));
+ if(process.env.WOLF_QA_KEEP_RUNNING!=='1'){await api('api/server/stop','POST',{});await app.close();}
+ console.log(JSON.stringify({ok:true,...receipt}));
+})().catch(async error=>{console.error(error.stack);if(app)await app.close().catch(()=>{});process.exitCode=1;}).finally(()=>{if(!success||process.env.WOLF_QA_KEEP_RUNNING!=='1')for(const child of owned)if(child.exitCode===null)child.kill();});

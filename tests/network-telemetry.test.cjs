@@ -1,0 +1,16 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const {deltaCounters,probeSummary,validateBridge}=require('../src/panel/network');
+const sample=(at,bytes=1000)=>({available:true,sampledAt:at,adapter:{id:'one'},counters:{receivedBytes:bytes,sentBytes:bytes,receivedPackets:100,sentPackets:100,receiveErrors:0,sendErrors:0,receiveDiscards:0,sendDiscards:0,tcpRetransmitted:0}});
+test('first reading is unknown, not a fake zero throughput',()=>assert.equal(deltaCounters(null,sample(5000)),null));
+test('rates use actual sample interval and bytes, not bits',()=>{const a=sample(1000,1000),b=sample(6000,626000);assert.equal(deltaCounters(a,b).downloadBytesPerSecond,125000);});
+test('zero traffic remains a valid zero',()=>assert.equal(deltaCounters(sample(1000),sample(6000)).uploadBytesPerSecond,0));
+test('adapter reset invalidates rate',()=>assert.equal(deltaCounters(sample(1000,1000),sample(6000,500)),null));
+test('adapter change invalidates rate',()=>{const b=sample(6000);b.adapter.id='two';assert.equal(deltaCounters(sample(1000),b),null);});
+test('long sampling gap invalidates current rate',()=>assert.equal(deltaCounters(sample(1000),sample(40000)),null));
+test('no link has no throughput measurement',()=>assert.equal(deltaCounters(sample(1000),{available:false}),null));
+test('ICMP timeouts do not enter RTT averages and are counted separately',()=>{const s=probeSummary([{p:{success:true,ms:0}},{p:{success:false,ms:null}},{p:{success:true,ms:20}},{p:{success:true,ms:30}}],'p');assert.equal(s.averageMs,50/3);assert.equal(s.unansweredPercent,25);assert.equal(s.variationMs,10);});
+test('probe window contains the last twenty readings only',()=>assert.equal(probeSummary(Array.from({length:30},()=>({p:{success:true,ms:10}})),'p').samples,20));
+test('missing probe data is not zero loss',()=>assert.equal(probeSummary([],'p').unansweredPercent,null));
+test('stale, future and wrong schema game samples are rejected',()=>{assert.equal(validateBridge({schema:1,sampledAt:1000,players:[]},30000),null);assert.equal(validateBridge({schema:1,sampledAt:60001,players:[]},30000),null);assert.equal(validateBridge({schema:2,sampledAt:30000,players:[]},30000),null);});
+test('bridge restricts exposed player fields and validates names',()=>{const s=validateBridge({schema:1,sampledAt:30000,pid:4,players:[{name:'Lobodk',pingMs:20.2,ip:'private'},{name:'bad name',pingMs:30},{name:'Nope',pingMs:-1}],mspt:12},30000);assert.deepEqual(s.players,[{name:'Lobodk',pingMs:20}]);assert.equal(s.mspt,12);});

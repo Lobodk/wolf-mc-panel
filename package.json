@@ -1,0 +1,24 @@
+{
+  "name": "wolf-mc-panel",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Self-hosted Minecraft Java server management for Windows, LAN and HTTPS domains.",
+  "license": "AGPL-3.0-only",
+  "author": "Lobodk",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node src/main.cjs",
+    "test": "node --test tests/*.test.cjs",
+    "check:release": "node scripts/check-release.cjs"
+  },
+  "homepage": "https://github.com/Lobodk/wolf-mc-panel",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lobodk/wolf-mc-panel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Lobodk/wolf-mc-panel/issues"
+  }
+}

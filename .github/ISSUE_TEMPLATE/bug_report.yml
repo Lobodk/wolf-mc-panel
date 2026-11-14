@@ -1,0 +1,28 @@
+name: Informar de un fallo
+description: Describe un problema reproducible sin incluir datos privados.
+body:
+  - type: markdown
+    attributes:
+      value: "No adjuntes claves del panel, claves API, contraseñas, certificados privados, mundos ni registros sin revisar. Las vulnerabilidades necesitan un canal privado."
+  - type: input
+    id: version
+    attributes:
+      label: Versión del panel y Windows
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducirlo
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Resultado esperado y resultado real
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencias revisadas y sin secretos

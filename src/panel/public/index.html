@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Wolf MC Panel · Panel</title>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="preload" href="/pixel-heading.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/layout.css">
+  <link rel="stylesheet" href="/motd-editor.css">
+  <link rel="stylesheet" href="/edition.css">
+  <script src="/app.js" defer></script>
+  <script src="/network-ui.js" defer></script>
+  <script src="/player-tools-ui.js" defer></script>
+  <script src="/manager-ui.js" defer></script>
+  <script src="/motd-model.js" defer></script>
+  <script src="/motd-editor.js" defer></script>
+  <script src="/features-ui.js" defer></script>
+  <script src="/navigation-ui.js" defer></script>
+  <script src="/edition-ui.js" defer></script>
+  <script src="/welcome-ui.js" defer></script>
+  <script src="/hosting-ui.js" defer></script>
+<link rel="stylesheet" href="/i18n.css"><script src="/i18n.js" defer></script></head>
+<body class="hide-addresses">
+<svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><symbol id="i-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5v9l-9 5-9-5V8zM3 8l9 5 9-5M12 13v9"/></symbol><symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-8 9 8M5 9v12h5v-7h4v7h5V9"/></symbol><symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 1 3h4l1-3 3-1 3-3-2-2 1-3-3-2-1-3z"/><circle cx="10.5" cy="11.5" r="3"/></symbol><symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4 5 6 6-6 6M13 19h8"/></symbol><symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2 21v-3a6 6 0 0 1 12 0v3zM17 4a3 3 0 0 1 0 6M17 14a5 5 0 0 1 5 5v2h-4"/></symbol><symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="m15 15 6 6"/></symbol><symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H4v18h5M13 7l5 5-5 5M8 12h13"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 8a9 9 0 0 0-15-3L2 8m0-6v6h6M4 16a9 9 0 0 0 15 3l3-3m0 6v-6h-6"/></symbol><symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 3 14 9-14 9z"/></symbol><symbol id="i-power" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10M6 5a9 9 0 1 0 12 0"/></symbol><symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/><path d="M6 6.5h1m3 0h8M6 17.5h1m3 0h8"/></symbol><symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10 14 4-4M9 16l-2 2a4 4 0 0 1-6-6l5-5a4 4 0 0 1 6 0m0 1 2-2a4 4 0 0 1 6 6l-5 5a4 4 0 0 1-6 0"/></symbol><symbol id="i-network" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="5"/><rect x="2" y="17" width="5" height="5"/><rect x="10" y="17" width="5" height="5"/><rect x="18" y="17" width="5" height="5"/><path d="M12 7v6M4 17v-4h17v4M12 13v4"/></symbol><symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="4" ry="10"/><path d="M2 12h20M4 6h16M4 18h16"/></symbol><symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="1"/><path d="M8 22h8M12 17v5"/></symbol><symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="7" width="12" height="15" rx="1"/><path d="M16 7V2H3v15h5"/></symbol><symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></symbol><symbol id="i-hammer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4 20 9-9M8 4l5-3 9 9-4 4-6-6-3 2-4-4z"/></symbol><symbol id="i-grass" viewBox="0 0 64 64"><path fill="#6cac32" d="m32 4 26 14-26 15L6 18z"/><path fill="#704126" d="m6 18 26 15v28L6 46z"/><path fill="#4e301f" d="m32 33 26-15v28L32 61z"/><path fill="#448e29" d="m6 18 26 15v9l-6-3v-4l-6-3v5l-7-4v-7l-7-3z"/><path fill="#34701e" d="m32 33 26-15v9l-5 3v-4l-7 4v9l-6 3v-6l-8 5z"/><path fill="#89c642" d="m16 15 6-3 6 3-6 4zm16 0 7-4 8 4-7 4zm-6 9 6-3 7 4-7 4z"/><path fill="#8c5835" d="m10 34 6 3v5l-6-3zm12 12 6 3v5l-6-3z"/><path fill="#694428" d="m39 45 6-4v6l-6 4zm10-9 6-3v5l-6 3z"/></symbol>
+<symbol id="i-emerald" viewBox="0 0 64 64"><path fill="#063c20" d="M24 3h16v6h8v8h7v30h-7v8H37v6H22v-6H12v-9H6V18h6v-8h12z"/><path fill="#0b9c30" d="M24 7h14v6h9v8h5v23h-7v8H33v5H23v-8H14V21h6V12h4z"/><path fill="#3ded47" d="M24 11h12v6h6v29H23v-5h-6V22h7z"/><path fill="#a5ff8d" d="M26 11h8v7h-8zm-5 10h7v20h-7z"/><path fill="#087e29" d="M36 21h9v23h-9z"/><path fill="#46b83b" d="M25 47h10v6H25z"/></symbol>
+<symbol id="i-repeater" viewBox="0 0 64 64"><path fill="#535c5e" d="m4 42 38-21 18 11v12L22 64 4 54z"/><path fill="#b6c2c4" d="m4 42 38-21 18 11-38 21z"/><path fill="#899799" d="m22 53 38-21v12L22 64z"/><path fill="#891516" d="m14 38 5-3 5 3v9l-5 3-5-3zm18-10 5-3 5 3v9l-5 3-5-3zM44 4l5-3 7 4v9l-6 3-6-4z"/><path fill="#f12618" d="m44 4 6 3 6-2-7-4zM14 38l5 3 5-3-5-3zm18-10 5 3 5-3-5-3z"/><path fill="#b0a17a" d="M47 15v18l5-2V15z"/></symbol>
+</defs></svg>
+  <main id="loginView" class="login-wrap">
+    <section class="login-card">
+      <div class="brand-mark"><img src="/logo.png" alt=""></div>
+      <p class="eyebrow">PANEL LOCAL · MINECRAFT</p>
+      <h1>Wolf MC Panel</h1>
+      <p class="muted">Administra la consola, los jugadores y los mods desde tu red.</p>
+      <form id="loginForm">
+        <label for="accessKey">Clave del panel</label>
+        <input id="accessKey" type="password" autocomplete="current-password" placeholder="Pega la clave de panel-access.txt" required>
+        <button class="button primary full" type="submit">Entrar al servidor</button>
+      </form>
+      <p id="loginError" class="error-text" role="alert"></p>
+      <p class="hint">La clave está en la carpeta <code>panel</code> del servidor.</p>
+    </section>
+  </main>
+
+  <div id="appView" class="app-shell hidden">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark small"><img src="/logo.png" alt=""></div>
+        <div>
+          <div class="eyebrow">NEOFORGE · 26.3</div>
+          <h1>Wolf MC Panel</h1>
+        </div>
+      </div>
+      <nav class="breadcrumb" aria-label="Ruta actual"><button id="homeBreadcrumb" type="button" class="home-crumb" aria-label="Inicio · Servidores"><svg class="icon" aria-hidden="true"><use href="#i-home"></use></svg></button> <svg class="icon " aria-hidden="true"><use href="#i-chevron"></use></svg><span>Administración</span><svg class="icon " aria-hidden="true"><use href="#i-chevron"></use></svg><strong id="breadcrumbCurrent">Resumen</strong></nav>
+      <div class="top-actions">
+        <div id="serverBadge" class="status-badge checking"><span class="status-dot"></span><span id="serverStatus">Comprobando…</span></div>
+        <button id="addressPrivacyButton" class="button ghost compact" type="button" aria-pressed="true">Mostrar direcciones</button>
+        <button id="logoutButton" class="button ghost compact" type="button"><svg class="icon " aria-hidden="true"><use href="#i-logout"></use></svg><span>Salir</span></button>
+      </div>
+    </header>
+
+    <div id="rconNotice" class="notice hidden">
+      <strong>Falta un reinicio para activar la consola del panel.</strong>
+      <span>Cuando reinicies Minecraft, RCON quedará habilitado solo para administrar el servidor desde la red local.</span>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <p class="side-label">ADMINISTRACIÓN</p>
+        <button id="homeSidebar" class="nav-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-home"></use></svg> Servidores</button>
+<nav class="panel-navigation" aria-label="Secciones del servidor"><label class="nav-search"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg><input id="navigationSearch" type="search" placeholder="Buscar sección…" autocomplete="off" aria-label="Buscar sección"></label><details class="navigation-group" open><summary>Servidor</summary><div><button class="nav-button active " data-view="overview" type="button"><svg class="icon" aria-hidden="true"><use href="#i-cube"></use></svg><span>Resumen</span></button><button class="nav-button " data-view="configuration" type="button"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg><span>Configuración</span></button><button class="nav-button " data-view="appearance" type="button"><svg class="icon" aria-hidden="true"><use href="#i-grass"></use></svg><span>Apariencia</span></button></div></details><details class="navigation-group" ><summary>Supervisión</summary><div><button class="nav-button " data-view="performance" type="button"><svg class="icon" aria-hidden="true"><use href="#i-monitor"></use></svg><span>Rendimiento y red</span></button><button class="nav-button " data-view="console" type="button"><svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg><span>Consola</span></button><button class="nav-button " data-view="diagnostics" type="button"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg><span>Diagnóstico</span></button></div></details><details class="navigation-group" ><summary>Contenido</summary><div><button class="nav-button " data-view="mods" type="button"><svg class="icon" aria-hidden="true"><use href="#i-cube"></use></svg><span>Mods instalados</span></button><button class="nav-button " data-view="mod-search" type="button"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg><span>Buscador de mods</span></button><button id="featureAmpNav" class="nav-button hidden" data-view="automodpack" type="button"><svg class="icon" aria-hidden="true"><use href="#i-link"></use></svg><span>AutoModpack</span></button></div></details><details class="navigation-group" ><summary>Jugadores</summary><div><button class="nav-button " data-view="players" type="button"><svg class="icon" aria-hidden="true"><use href="#i-users"></use></svg><span>Acceso y permisos</span></button><button class="nav-button " data-view="player-tools" type="button"><svg class="icon" aria-hidden="true"><use href="#i-hammer"></use></svg><span>Acciones en el juego</span></button></div></details><details class="navigation-group" ><summary>Mantenimiento</summary><div><button class="nav-button " data-view="backups" type="button"><svg class="icon" aria-hidden="true"><use href="#i-server"></use></svg><span>Copias de seguridad</span></button><button class="nav-button " data-view="schedule" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg><span>Reinicios programados</span></button></div></details><p id="navigationEmpty" class="hint hidden">No hay secciones que coincidan.</p></nav>        <div class="sidebar-scene" aria-hidden="true"><div class="voxel-world"><div class="voxel-stone stone-one"></div><div class="voxel-stone stone-two"></div><div class="voxel-stone stone-three"></div><svg class="side-grass"><use href="#i-grass"></use></svg><i class="grass-blade blade-one"></i><i class="grass-blade blade-two"></i></div></div>
+        <div class="sidebar-footer">
+          <a class="support-link" id="supportProjectLink" href="https://ko-fi.com/lobo97" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Apoyar el proyecto en Ko-fi (abre una pestaña nueva)">
+            <svg class="support-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 4.8a5.2 5.2 0 0 0-7.4 0L12 5.9l-1.1-1.1a5.2 5.2 0 0 0-7.4 7.4L12 21l8.5-8.8a5.2 5.2 0 0 0 0-7.4Z"/></svg>
+            <span><strong>Apoyar el proyecto</strong><small>Ko-fi · Apoyo voluntario</small></span>
+            <span class="support-external" aria-hidden="true">↗</span>
+          </a>
+          <div class="sidebar-foot"><span class="tiny-dot"></span><span>Acceso solo en este equipo</span></div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section id="view-home" class="view">
+          <div class="page-heading"><div><p class="eyebrow">TU CENTRO DE CONTROL</p><h2>Servidores</h2><p class="muted">Mundos independientes, una sola administración.</p></div><div class="inline-actions"><button id="homeRefresh" class="button secondary" type="button">Actualizar</button><button id="createServerButton" class="button primary" type="button">Crear Servidor</button></div></div>
+          <p id="homeMessage" class="hint" role="status">Cargando servidores…</p>
+          <div id="serverInstallProgress" class="operation-progress hidden" role="status" aria-live="polite"><div class="operation-progress-heading"><strong id="serverInstallPhase">Preparando…</strong><span id="serverInstallPercent">0%</span></div><progress id="serverInstallBar" value="0" max="100"></progress><p id="serverInstallDetail" class="hint"></p></div>
+          
+          <div class="home-tabs" role="tablist" aria-label="Centro de servidores"><button id="homeTabServers" role="tab" aria-selected="true" class="active" type="button" data-home-tab="servers">Mis servidores</button><button role="tab" aria-selected="false" type="button" data-home-tab="resources">Recursos del PC</button><button role="tab" aria-selected="false" type="button" data-home-tab="deleted">Papelera y recuperación</button></div><div id="homePanelServers" data-home-panel="servers" role="tabpanel"><div id="serverCards" class="server-cards"></div></div><div data-home-panel="resources" role="tabpanel" hidden><article class="section-card host-resources"><div class="section-title"><h3>Recursos del PC · todos los servidores</h3><button id="hostResourcesRefresh" type="button" class="button secondary">Actualizar</button></div><div class="feature-host-stats"><div><span>CPU del PC</span><strong id="hostCpu">Calculando…</strong></div><div><span>RAM del PC</span><strong id="hostRam">—</strong></div><div><span>RAM usada por Minecraft</span><strong id="hostMinecraftRam">—</strong></div></div><progress id="hostMemoryBar" max="100" value="0"></progress><p id="hostResourcesMessage" class="hint"></p><div id="hostServerResources"></div></article></div><div data-home-panel="deleted" role="tabpanel" hidden><article class="section-card deleted-servers-card"><div class="section-title"><h3>Servidores eliminados · recuperación</h3><button id="deletedServersRefresh" type="button" class="button secondary">Actualizar</button></div><p id="deletedServersMessage" class="hint"></p><div id="deletedServersList"></div></article></div>
+          
+        </section>
+<section id="view-configuration" class="view">
+ <div class="page-heading"><div><p class="eyebrow">AJUSTES DEL SERVIDOR</p><h2>Configuración general</h2><p class="muted">Cambios independientes para el servidor seleccionado.</p></div><button id="featureSettingsRefresh" type="button" class="button secondary">Actualizar</button></div>
+ <p id="featureSettingsMessage" class="feature-message" role="status"></p>
+ <article class="section-card"><form id="featureSettingsForm">
+  <div class="feature-grid"><label>Dificultad<select id="featureDifficulty"><option value="peaceful">Pacífica</option><option value="easy">Fácil</option><option value="normal">Normal</option><option value="hard">Difícil</option></select></label><label>Jugadores máximos<input id="featureMaxPlayers" type="number" min="1" max="1000" required></label><label>Modo de juego inicial<select id="featureGamemode"><option value="survival">Supervivencia</option><option value="creative">Creativo</option><option value="adventure">Aventura</option><option value="spectator">Espectador</option></select></label><label>Límite de RAM (MB)<input id="featureMemory" type="number" min="1024" step="256" required></label><label>Protección del spawn (bloques)<input id="featureSpawnProtection" type="number" min="0" max="64" required></label></div>
+  <div class="feature-checks"><label><input id="featurePvp" type="checkbox"> Permitir PvP</label><label><input id="featureFlight" type="checkbox"> Permitir vuelo</label><label><input id="featureWhitelist" type="checkbox"> Activar whitelist</label><label><input id="featureForceGamemode" type="checkbox"> Forzar modo de juego al entrar</label></div>
+  
+  <button class="button primary" type="submit">Guardar configuración</button><p class="hint">Se conserva una copia previa. Guardar no reinicia Minecraft. Los límites de RAM de todos los servidores comparten la memoria del PC.</p>
+ </form></article>
+ 
+<article class="section-card">
+              <div class="section-title">
+                <div><p class="eyebrow">CONFIGURACIÓN DE MINECRAFT</p><h3>Distancias de carga</h3></div>
+              </div>
+              <div class="metric-row"><span>Distancia de visión</span><strong id="perfViewDistance">—</strong></div>
+              <div class="metric-row"><span>Distancia de simulación</span><strong id="perfSimulationDistance">—</strong></div>
+              <div class="range-control">
+                <label for="viewDistanceSlider"><span>Chunks normales</span><strong id="viewDistanceValue">—</strong></label>
+                <input id="viewDistanceSlider" type="range" min="2" max="32" step="1" value="16">
+              </div>
+              <div class="range-control">
+                <label for="simulationDistanceSlider"><span>Chunks de simulación</span><strong id="simulationDistanceValue">—</strong></label>
+                <input id="simulationDistanceSlider" type="range" min="2" max="16" step="1" value="10">
+              </div>
+              <div class="inline-actions config-actions">
+                <button id="saveDistancesButton" class="button primary compact" type="button">Guardar distancias</button>
+                <span id="distanceSaveStatus" class="hint"></span>
+              </div>
+              <p class="hint">Se aplican al próximo arranque. La distancia de simulación no puede superar la normal.</p>
+              <p class="hint">La RAM del proceso incluye memoria de la JVM y no equivale exactamente al heap usado por Minecraft.</p>
+            </article><article class="section-card">
+            <div class="section-title">
+              <div><p class="eyebrow">ACTUALIZACIONES</p><h3>NeoForge para Minecraft 26.3</h3></div>
+              <button id="checkNeoForgeButton" class="button secondary" type="button">Buscar actualización</button>
+            </div>
+            <div class="metric-row"><span>Versión instalada</span><strong id="neoForgeCurrent">—</strong></div>
+            <div class="neo-forge-actions">
+              <select id="neoForgeVersion" aria-label="Versión de NeoForge"></select>
+              <button id="updateNeoForgeButton" class="button primary" type="button" disabled>Actualizar NeoForge</button>
+            </div>
+            <p id="neoForgeStatus" class="hint">Se creará una copia del servidor antes de actualizar. El servidor debe estar apagado.</p>
+          </article></section>
+<section id="view-automodpack" class="view">
+ <div class="page-heading"><div><p class="eyebrow">DISTRIBUCIÓN A LOS CLIENTES</p><h2>AutoModpack</h2><p class="muted">Gestiona el pack del servidor seleccionado.</p></div><button id="featureAmpRefresh" type="button" class="button secondary">Actualizar</button></div>
+ <article class="section-card"><div class="section-title"><h3>Generación del modpack</h3><span id="featureAmpState" class="count-pill">Comprobando…</span></div><p id="featureAmpDates" class="muted"></p><button id="featureAmpGenerate" type="button" class="button primary">Generar modpack</button><progress id="featureAmpProgress" class="hidden"></progress><p id="featureAmpMessage" class="hint" role="status"></p><p class="hint">Equivale a «automodpack generate». El servidor debe estar encendido. Revisa la consola para confirmar el resultado de la generación.</p></article>
+ <article class="section-card"><div class="section-title"><h3>Conectar con verificación de identidad</h3></div><p class="hint">Copia la dirección de este servidor con su huella para compartirla con los jugadores.</p><div class="server-address-line address-concealed"><code id="featureAmpJoin" class="server-card-address"></code><button type="button" data-reveal-address class="button secondary address-reveal">Mostrar</button><button id="featureAmpCopy" class="button secondary" type="button">Copiar dirección con huella</button></div><p id="featureAmpPinMessage" class="hint"></p><button id="featureAmpTrustHelp" type="button" class="button secondary" disabled>Resolver huella antigua</button><p class="hint">Úsalo si has recreado un servidor en la misma dirección y puerto y Minecraft sigue recordando su certificado anterior.</p></article>
+</section>
+<section id="view-diagnostics" class="view">
+ <div class="page-heading"><div><p class="eyebrow">ERRORES Y COMPATIBILIDAD</p><h2>Diagnóstico de arranque</h2><p class="muted">Pistas a partir de los registros de este servidor.</p></div><button id="featureDiagnosticsRefresh" type="button" class="button secondary">Analizar registros</button></div><p id="featureDiagnosticsMessage" class="hint" role="status"></p><div id="featureDiagnosticsFindings" class="feature-findings"></div><article class="section-card"><div class="section-title"><h3>Líneas relevantes</h3><button id="featureDiagnosticsConsole" class="button secondary" type="button">Abrir consola</button></div><pre id="featureDiagnosticsLog" class="feature-diagnostic-log"></pre><p class="hint">El análisis es orientativo. Los registros pueden contener errores de intentos anteriores; comprueba las fechas antes de retirar mods.</p></article>
+</section>
+
+        <section id="view-backups" class="view"><div class="page-heading"><div><p class="eyebrow">ADMINISTRACIÓN DEL SERVIDOR</p><h2>Copias de seguridad</h2><p class="muted">Crea, programa y restaura copias de este servidor.</p></div></div><article class="section-card">
+            <div class="section-title">
+              <div><p class="eyebrow">COPIAS DEL SERVIDOR</p><h3>Copias de seguridad</h3></div>
+              <button id="createBackupButton" class="button primary" type="button">Crear copia manual</button>
+            </div>
+            <p class="muted">Guarda mundo, mods, configuraciones, whitelist y permisos en Documentos. Las manuales se conservan; la automática se reemplaza cada 4 horas.</p>
+            <div class="backup-settings">
+              <label class="toggle-row" for="autoBackupToggle">
+                <input id="autoBackupToggle" type="checkbox">
+                <span>Copias automáticas cada 4 horas</span>
+              </label>
+              <span id="backupStatus" class="hint">Cargando estado de las copias…</span>
+            </div>
+            <div class="metric-row"><span>Carpeta</span><strong id="backupDirectory">—</strong></div>
+            <div class="metric-row"><span>Próxima copia automática</span><strong id="backupNextRun">Desactivada</strong></div>
+            <p id="backupError" class="hint error-text" role="status"></p>
+            <ul id="backupList" class="backup-list"></ul>
+            <p class="hint">Manuales y Automáticas se guardan en subcarpetas separadas. Usa Restaurar junto a una copia para recuperarla; antes se guarda el estado actual y Minecraft queda apagado.</p>
+          </article></section>
+<section id="view-schedule" class="view"><div class="page-heading"><div><p class="eyebrow">ADMINISTRACIÓN DEL SERVIDOR</p><h2>Programación</h2><p class="muted">Reinicios con avisos y guardado del mundo.</p></div></div><article class="section-card"><div class="section-title"><h3>Reinicios programados</h3></div><form id="featureScheduleForm"><label class="feature-label"><span><input id="featureScheduleEnabled" type="checkbox"> Activar reinicios programados</span></label><label class="feature-label">Hora de reinicio (Madrid)<input id="featureScheduleTime" type="time" value="04:00" required></label><fieldset id="featureScheduleDays" class="feature-days"><legend>Días de la semana</legend><label><input type="checkbox" value="1" checked> Lu</label><label><input type="checkbox" value="2" checked> Ma</label><label><input type="checkbox" value="3" checked> Mi</label><label><input type="checkbox" value="4" checked> Ju</label><label><input type="checkbox" value="5" checked> Vi</label><label><input type="checkbox" value="6" checked> Sá</label><label><input type="checkbox" value="0" checked> Do</label></fieldset><button class="button primary" type="submit">Guardar programación</button></form><p id="featureScheduleStatus" class="hint" role="status"></p><p class="hint">Avisa por el chat aproximadamente 5 minutos, 1 minuto y 10 segundos antes. Guarda el mundo antes de reiniciar. Los servidores apagados no se arrancan.</p></article></section>
+<section id="view-appearance" class="view"><div class="page-heading"><div><p class="eyebrow">ADMINISTRACIÓN DEL SERVIDOR</p><h2>Apariencia</h2><p class="muted">Icono y descripción que verán los jugadores en Minecraft.</p></div></div><article class="section-card motd-editor-card">
+  <div class="motd-editor-heading"><div><h3>El nombre de tu mundo, a tu estilo</h3><p class="muted">Escribe, elige los colores y comprueba cómo quedará.</p></div><span id="motdProvider" class="motd-provider">Cargando diseño…</span></div>
+  <div class="motd-editor-grid"><div>
+    <div class="motd-line-tabs" role="tablist" aria-label="Línea que quieres personalizar"><button id="motdLineTab0" class="active" type="button" role="tab" aria-selected="true" aria-controls="motdVisualPanel">Nombre del servidor</button><button id="motdLineTab1" type="button" role="tab" aria-selected="false" aria-controls="motdVisualPanel">Segunda línea</button></div>
+    <p id="motdUnsupported" class="motd-unsupported" hidden>Esta línea utiliza un formato avanzado o varios estilos dentro del mismo texto. Se conserva intacta: puedes editarla en «Códigos y opciones avanzadas».</p>
+    <div id="motdVisualPanel" role="tabpanel" aria-label="Personalizar la línea"><fieldset id="motdVisualFields" class="motd-visual-fields" disabled>
+      <label class="motd-field"><span id="motdLineTextLabel">Nombre que aparecerá en Minecraft</span><input id="motdLineText" type="text" maxlength="160" autocomplete="off" placeholder="El nombre de tu servidor"></label>
+      <span class="motd-control-label">Estilo de letra</span><div id="motdFonts" class="motd-fonts" role="group" aria-label="Estilo de letra"></div><p class="motd-compatibility">Estos tipos decorativos transforman las letras que verá Minecraft. Su aspecto depende de la versión y del paquete de recursos del cliente; los acentos se conservan.</p>
+      <label class="motd-field">Tipo de color<select id="motdStyleMode"><option value="plain">Sin color especial</option><option value="solid">Un solo color</option><option value="gradient">Degradado personalizado</option><option value="rainbow">Arcoíris</option></select></label>
+      <div id="motdPaletteSection"><span class="motd-control-label">Combinaciones de colores</span><div id="motdPalettes" class="motd-palettes" role="group" aria-label="Combinaciones de colores"></div></div><p id="motdCompatibility" class="motd-compatibility"></p>
+      <div id="motdColorSection" class="motd-color-section"><span class="motd-control-label">Colores de esta línea</span><div id="motdColors" class="motd-colors"></div><button id="motdAddColor" type="button" class="motd-add-color">+ Añadir color al degradado</button></div>
+      <span class="motd-control-label">Formato de la letra</span><div class="motd-formats" role="group" aria-label="Formato del texto"><button class="motd-format" type="button" data-motd-format="bold" aria-label="Negrita" title="Negrita" aria-pressed="false">B</button><button class="motd-format" type="button" data-motd-format="italic" aria-label="Cursiva" title="Cursiva" aria-pressed="false">I</button><button class="motd-format" type="button" data-motd-format="underlined" aria-label="Subrayado" title="Subrayado" aria-pressed="false">U</button><button class="motd-format" type="button" data-motd-format="strikethrough" aria-label="Tachado" title="Tachado" aria-pressed="false">S</button><button id="motdClearFormat" class="motd-format motd-clear" type="button">Restablecer letra</button></div>
+    </fieldset></div>
+  </div><aside class="motd-preview-wrap" aria-label="Vista previa del servidor"><p class="motd-preview-caption">Así lo verán tus jugadores</p><div class="motd-preview-server"><img id="motdPreviewIcon" src="/logo.png" width="54" height="54" alt="Icono del servidor"><div class="motd-preview-content"><span class="motd-preview-server-name">Servidor de Minecraft</span><div id="motdPreviewLine0" class="motd-preview-line"></div><div id="motdPreviewLine1" class="motd-preview-line"></div></div></div><p id="motdPreviewNote" class="motd-preview-note">Vista aproximada de la lista de Minecraft.</p><p class="motd-preview-note">Los cambios se aplican al reiniciar este servidor. Guardar aquí no lo reinicia.</p></aside></div>
+  <div class="motd-editor-footer"><span id="motdDraftState" class="motd-draft-state" role="status">Cargando…</span><div class="inline-actions"><button id="motdUndo" class="button secondary" type="button" disabled>Deshacer cambios</button><button id="motdSave" class="button primary" type="button" disabled>Guardar diseño</button></div></div><p id="motdSaveStatus" class="motd-save-status" role="status"></p>
+  <details id="motdAdvanced" class="motd-advanced"><summary>Códigos y opciones avanzadas</summary><label class="feature-label">Descripción en la lista de Minecraft<textarea form="featureSettingsForm" id="featureMotd" rows="3" maxlength="500" spellcheck="false" aria-describedby="featureMotdHint motdCodeCount"></textarea></label><p id="featureMotdHint" class="hint"></p><p id="motdCodeCount" class="hint"></p></details>
+</article><article class="section-card"><div class="section-title"><h3>Icono del servidor</h3></div><img id="featureIconPreview" class="feature-icon-preview hidden" width="64" height="64" alt="Icono del servidor"><p class="muted">La imagen se ajusta automáticamente a 64 × 64 píxeles.</p><input id="featureIconFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="featureIconSave" class="button primary" type="button" disabled>Guardar icono</button><p id="featureIconMessage" class="hint" role="status"></p></article></section>
+<section id="view-overview" class="view active">
+          <div class="page-heading">
+            <div><h2>Resumen del servidor</h2><p class="muted">Todo listo para tu próxima aventura.</p></div>
+            <button id="refreshButton" class="button secondary" type="button"><svg class="icon " aria-hidden="true"><use href="#i-refresh"></use></svg> Actualizar</button>
+          </div>
+          <section class="world-hero" aria-label="Tu mundo, bajo control">
+            <div class="hero-copy"><h2>Tu mundo, bajo control.</h2><div class="hero-meta"><svg class="icon " aria-hidden="true"><use href="#i-hammer"></use></svg><strong>NEOFORGE · 26.3</strong><span class="hero-divider"></span><span id="heroStatusBadge" class="hero-status"><span class="status-dot"></span><span id="heroStatus">Comprobando…</span></span></div></div>
+          </section>
+          <div class="stats-grid overview-stats">
+            <article class="stat-card server-stat"><svg class="icon pixel-icon" aria-hidden="true"><use href="#i-grass"></use></svg><div><span class="stat-label">ESTADO DEL SERVIDOR</span><strong id="overviewState">—</strong><span id="overviewPlayers" class="muted">Comprobando jugadores…</span></div></article>
+            <article class="stat-card"><svg class="icon pixel-icon" aria-hidden="true"><use href="#i-emerald"></use></svg><div><span class="stat-label">MODS INSTALADOS</span><strong id="overviewMods">—</strong><span class="muted">Tu mundo, ampliado</span></div></article>
+            <article class="stat-card"><svg class="icon pixel-icon" aria-hidden="true"><use href="#i-repeater"></use></svg><div><span class="stat-label">PUERTO LOCAL</span><strong id="overviewPort">25565</strong><span class="muted">Minecraft Java · TCP</span></div></article>
+          </div>
+          <div class="overview-columns">
+            <article class="section-card server-control">
+              <div class="section-title"><h3><svg class="icon " aria-hidden="true"><use href="#i-server"></use></svg> Control del servidor</h3><span id="controlStatusBadge" class="status-badge compact-badge"><span class="status-dot"></span><span id="controlStatus">Comprobando…</span></span></div>
+              <p id="serverMessage">Comprobando el estado del servidor…</p>
+              <p class="hint">Iniciar arranca el servidor apagado. Reiniciar guarda el mundo y vuelve a cargar los mods.</p>
+              <div class="server-actions"><button id="startButton" class="button primary" type="button"><svg class="icon " aria-hidden="true"><use href="#i-play"></use></svg> Iniciar servidor</button><button id="restartButton" class="button warning" type="button"><svg class="icon " aria-hidden="true"><use href="#i-refresh"></use></svg> Reiniciar</button><button id="stopButton" class="button danger" type="button"><svg class="icon " aria-hidden="true"><use href="#i-power"></use></svg> Apagar</button></div>
+            </article>
+            <article class="section-card connected-card"><div class="section-title"><h3><svg class="icon " aria-hidden="true"><use href="#i-users"></use></svg> Jugadores conectados</h3><span id="overviewPlayersCount" class="count-pill">—</span></div><ul id="overviewConnectedPlayers" class="overview-player-list"><li class="empty-row">Comprobando jugadores…</li></ul></article>
+          </div>
+          <article class="section-card addresses-card">
+            <div class="section-title"><h3><svg class="icon " aria-hidden="true"><use href="#i-link"></use></svg> Conexión y direcciones</h3></div>
+            <div class="address-row"><svg class="icon " aria-hidden="true"><use href="#i-network"></use></svg><span>Red local</span><code>—</code><button class="copy-button" type="button" data-copy="—" aria-label="Copiar dirección local" title="Copiar dirección local"><svg class="icon " aria-hidden="true"><use href="#i-copy"></use></svg></button></div>
+            <div class="address-row"><svg class="icon " aria-hidden="true"><use href="#i-globe"></use></svg><span>Acceso para amigos</span><code>127.0.0.1</code><button class="copy-button" type="button" data-copy="127.0.0.1" aria-label="Copiar dirección pública" title="Copiar dirección pública"><svg class="icon " aria-hidden="true"><use href="#i-copy"></use></svg></button></div>
+            <div class="address-row"><svg class="icon " aria-hidden="true"><use href="#i-monitor"></use></svg><span>Panel de administración</span><code id="panelAddress">—</code><button class="copy-button" type="button" data-copy aria-label="Copiar dirección del panel" title="Copiar dirección del panel"><svg class="icon " aria-hidden="true"><use href="#i-copy"></use></svg></button></div>
+            <div id="autoModpackFingerprintSection" class="automodpack-fingerprint-section hidden">
+              <div class="address-row"><svg class="icon" aria-hidden="true"><use href="#i-link"></use></svg><span>Huella del servidor</span><code id="autoModpackFingerprint"></code><button id="copyAutoModpackFingerprint" class="copy-button" type="button" data-copy aria-label="Copiar huella del servidor" title="Copiar huella del servidor"><svg class="icon" aria-hidden="true"><use href="#i-copy"></use></svg></button></div>
+              <p id="autoModpackFingerprintHint" class="hint">Huella SHA-256 de AutoModpack de este servidor.</p>
+              <button id="overviewTrustHelp" type="button" class="button secondary small-button" disabled>Resolver huella antigua</button>
+            </div>
+          </article>
+        </section>
+
+        <section id="view-performance" class="view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">USO DEL EQUIPO</p>
+              <h2>Rendimiento y red</h2>
+              <p class="muted">Recursos del equipo, distancias de carga y copias del servidor.</p>
+            </div>
+            <div class="inline-actions">
+              <span id="perfUpdated" class="hint">Esperando datos…</span>
+              <button id="refreshPerformanceButton" class="button secondary" type="button"><svg class="icon " aria-hidden="true"><use href="#i-refresh"></use></svg> Actualizar</button>
+            </div>
+          </div>
+          <div class="stats-grid performance-grid">
+            <article class="stat-card performance-card">
+              <span class="stat-label">HEAP JAVA EN USO</span>
+              <strong id="perfHeapUsed">—</strong>
+              <span id="perfHeapDetail" class="muted">Medición en vivo de la JVM</span>
+              <progress id="perfHeapProgress" class="metric-progress" max="100" value="0">0%</progress>
+              <span id="perfHeapPercent" class="metric-caption">—</span>
+            </article>
+            <article class="stat-card performance-card">
+              <span class="stat-label">RAM DEL PROCESO</span>
+              <strong id="perfWorkingSet">—</strong>
+              <span id="perfProcessPrivate" class="muted">Memoria privada: —</span>
+              <progress id="perfProcessProgress" class="metric-progress" max="100" value="0">0%</progress>
+              <span id="perfProcessPercent" class="metric-caption">—</span>
+            </article>
+            <article class="stat-card performance-card">
+              <span class="stat-label">CPU DEL SERVIDOR</span>
+              <strong id="perfCpu">—</strong>
+              <span id="perfCpuDetail" class="muted">Calculando uso reciente</span>
+              <progress id="perfCpuProgress" class="metric-progress cpu-progress" max="100" value="0">0%</progress>
+              <span class="metric-caption">Porcentaje del CPU total del PC</span>
+            </article>
+            <article class="stat-card performance-card">
+              <span class="stat-label">TIEMPO ACTIVO</span>
+              <strong id="perfUptime">—</strong>
+              <span id="perfUptimeDetail" class="muted">Desde el último arranque</span>
+            </article>
+          </div>
+
+          <article id="networkTelemetry" class="section-card network-panel">
+            <div class="section-title"><div><p class="eyebrow">TRÁFICO Y LATENCIA</p><h3><svg class="icon" aria-hidden="true"><use href="#i-network"></use></svg> Telemetría de red</h3></div><div class="inline-actions"><span id="networkState" class="network-quality" data-state="neutral">Midiendo…</span><button id="refreshNetworkButton" type="button" class="button secondary compact">Actualizar red</button></div></div>
+            <p class="muted">Tráfico total del PC en su adaptador principal. Incluye Minecraft, descargas y otras aplicaciones.</p>
+            <div class="network-metrics">
+              <div><span class="stat-label">BAJADA DEL PC</span><strong id="netDownload">—</strong><small id="netDownloadDetail">Esperando muestras</small></div>
+              <div><span class="stat-label">SUBIDA DEL PC</span><strong id="netUpload">—</strong><small id="netUploadDetail">Esperando muestras</small></div>
+              <div><span class="stat-label">PING A INTERNET</span><strong id="netInternet">—</strong><small>Sonda ICMP desde el servidor a 1.1.1.1</small></div>
+              <div><span class="stat-label">PING MEDIO JUGADORES</span><strong id="netPlayerAverage">—</strong><small id="netPlayerDetail">Latencia informada por Minecraft</small></div>
+            </div>
+            <div class="network-chart-header"><div class="network-chart-legend"><span class="download-legend">Bajada</span><span class="upload-legend">Subida</span></div><span id="networkHistoryLabel" class="hint">Registro de hasta 10 minutos</span></div>
+            <div class="network-chart"><span id="networkChartMax" class="network-chart-max">—</span><svg viewBox="0 0 800 180" preserveAspectRatio="none" role="img" aria-label="Historial de tráfico de subida y bajada del PC"><path class="network-grid" d="M15 20H785 M15 90H785 M15 160H785"/><path id="networkDownloadPath" class="network-line download-line" d=""/><path id="networkUploadPath" class="network-line upload-line" d=""/></svg><span id="networkChartEmpty">Tomando muestras para la gráfica…</span><div class="network-chart-axis"><span>Inicio del registro visible</span><span>Ahora</span></div></div>
+            <details class="network-advanced"><summary>Detalles del adaptador y diagnóstico</summary><div class="network-detail-grid">
+              <div><h4>Conexión y latencia</h4><div class="metric-row"><span>Adaptador</span><strong id="netAdapterName">—</strong></div><div class="metric-row"><span>IP local</span><strong id="netLocalIp">—</strong></div><div class="metric-row"><span>Puerta de enlace</span><strong id="netGateway">—</strong></div><div class="metric-row"><span>Ping al router</span><strong id="netRouterPing">—</strong></div><div class="metric-row"><span>Respuesta HTTP del panel</span><strong id="netPanelRtt">—</strong></div><div class="metric-row"><span>Variación RTT a Internet</span><strong id="netInternetJitter">—</strong></div><div class="metric-row"><span>Sondas sin respuesta · últimas 20</span><strong id="netProbeLoss">—</strong></div><p class="hint">Las sondas ICMP pueden estar filtradas. Su falta de respuesta no demuestra pérdida de paquetes del juego. La respuesta HTTP incluye red y procesamiento del panel.</p></div>
+              <div><h4>Tráfico y estado del juego</h4><div class="metric-row"><span>Velocidad del enlace local</span><strong id="netLinkSpeed">—</strong></div><div class="metric-row"><span>Uso del enlace · dirección más ocupada</span><strong id="netLinkUsage">—</strong></div><div class="metric-row"><span>Acumulados del adaptador</span><strong id="netAdapterTotals">—</strong></div><div class="metric-row"><span>Paquetes del PC</span><strong id="netPackets">—</strong></div><div class="metric-row"><span>Errores del adaptador</span><strong id="netErrors">—</strong></div><div class="metric-row"><span>Descartes del adaptador</span><strong id="netDiscards">—</strong></div><div class="metric-row"><span>Retransmisiones TCP · todo el PC</span><strong id="netRetransmits">—</strong></div><div class="metric-row"><span>Conexiones TCP al puerto del juego</span><strong id="netTcpCount">—</strong></div><div class="metric-row"><span>Tiempo medio de tick · MSPT</span><strong id="netMspt">—</strong></div><div class="metric-row"><span>TPS observados</span><strong id="netTps">—</strong></div><p class="hint">La velocidad de enlace es la de Ethernet/Wi-Fi, no una prueba de tu tarifa de Internet. Los contadores son los que informa Windows y pueden reiniciarse con el adaptador.</p></div>
+            </div>
+            </details><div class="network-players-heading"><h4>Latencia por jugador</h4><span id="networkUpdated" class="hint">Esperando la primera lectura…</span></div>
+            <div class="table-wrap"><table class="network-players-table"><thead><tr><th>Jugador</th><th>Ping actual</th><th>Media · hasta 5 min</th><th>Máximo · hasta 5 min</th><th>Orientación</th></tr></thead><tbody id="networkPlayers"><tr><td colspan="5" class="network-empty">Esperando datos del juego…</td></tr></tbody></table></div>
+            <p class="hint">El ping de jugadores es ida y vuelta entre Minecraft y cada cliente; puede reflejar también pausas del servidor o del cliente. Historial en memoria mientras el panel está encendido.</p>
+          </article>
+
+          <div class="two-columns performance-details">
+            <article class="section-card">
+              <div class="section-title">
+                <div><p class="eyebrow">MEMORIA DEL PC</p><h3>Recursos del equipo</h3></div>
+              </div>
+              <div class="metric-row"><span>RAM libre</span><strong id="perfHostMemory">—</strong></div>
+              <div class="metric-row"><span>Asignación JVM</span><strong id="perfJvmInitial">—</strong></div>
+              <div class="metric-row"><span>Límite de heap JVM</span><strong id="perfJvmMax">—</strong></div>
+              <progress id="perfHostMemoryProgress" class="metric-progress" max="100" value="0">0%</progress>
+              <span id="perfHostMemoryDetail" class="metric-caption">—</span>
+            </article>
+            
+          </div>
+          
+          
+          <p id="perfError" class="hint" role="status"></p>
+        </section>
+
+        <section id="view-console" class="view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">REGISTRO Y ÓRDENES</p>
+              <h2>Consola</h2>
+              <p class="muted">Registro en vivo del servidor y órdenes de administrador.</p>
+            </div>
+            <button id="clearConsoleButton" class="button secondary" type="button">Limpiar vista</button>
+          </div>
+          <pre id="consoleOutput" class="terminal" aria-live="polite">Esperando el registro del servidor…</pre>
+          <form id="commandForm" class="command-form">
+            <span class="prompt">&gt;</span>
+            <input id="commandInput" type="text" autocomplete="off" placeholder="Escribe una orden, por ejemplo: list">
+            <button class="button primary" type="submit">Enviar</button>
+          </form>
+          <p id="commandResult" class="hint">Las órdenes se ejecutan como administrador del servidor.</p>
+        </section>
+
+        <section id="view-players" class="view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">PERMISOS Y ACCESO</p>
+              <h2>Jugadores</h2>
+              <p class="muted">Control en vivo: expulsiones, baneos, operadores y whitelist.</p>
+            </div>
+            <button id="refreshPlayersButton" class="button secondary" type="button"><svg class="icon " aria-hidden="true"><use href="#i-refresh"></use></svg> Actualizar</button>
+          </div>
+          <div class="two-columns player-sections">
+            <article class="section-card player-panel-full">
+              <div class="section-title">
+                <div><p class="eyebrow">EN LÍNEA</p><h3>Jugadores conectados</h3></div>
+                <span id="onlinePlayersCount" class="player-count">—</span>
+              </div>
+              <ul id="onlinePlayersList" class="player-list"></ul>
+            </article>
+            <article class="section-card">
+              <div class="section-title">
+                <div><p class="eyebrow">OPERADORES</p><h3>Administradores</h3></div>
+              </div>
+              <form id="opForm" class="add-form">
+                <input id="opName" type="text" maxlength="16" placeholder="Nombre Java" required>
+                <button class="button primary" type="submit">Dar operador</button>
+              </form>
+              <ul id="opsList" class="player-list"></ul>
+            </article>
+            <article class="section-card">
+              <div class="section-title">
+                <div><p class="eyebrow">WHITELIST</p><h3>Jugadores permitidos</h3></div>
+              </div>
+              <form id="whitelistForm" class="add-form">
+                <input id="whitelistName" type="text" maxlength="16" placeholder="Nombre Java" required>
+                <button class="button primary" type="submit">Añadir</button>
+              </form>
+              <ul id="whitelistList" class="player-list"></ul>
+            </article>
+            <article class="section-card player-panel-full">
+              <div class="section-title">
+                <div><p class="eyebrow">BANEOS</p><h3>Jugadores bloqueados</h3></div>
+              </div>
+              <form id="banPlayerForm" class="add-form ban-form">
+                <input id="banPlayerName" type="text" maxlength="16" placeholder="Nombre Java, también offline" required>
+                <input id="banPlayerReason" type="text" maxlength="160" placeholder="Motivo del baneo (opcional)">
+                <button class="button danger" type="submit">Banear</button>
+              </form>
+              <ul id="bannedPlayersList" class="player-list"></ul>
+            </article>
+          </div>
+        </section>
+
+        <section id="view-player-tools" class="view">
+          <div class="page-heading"><div><p class="eyebrow">CONTROL EN EL JUEGO</p><h2>Acciones de jugadores</h2><p class="muted">Objetos, experiencia, lápidas, teletransporte y efectos de terror.</p></div><button id="toolsRefresh" class="button secondary" type="button">Actualizar</button></div>
+          <article class="section-card tools-target">
+            <div><label for="toolsPlayer">Jugador</label><select id="toolsPlayer"><option value="">Selecciona un jugador…</option></select></div>
+            <label class="tools-check"><input id="toolsQuiet" type="checkbox" checked> No anunciar las acciones en el chat</label>
+            <p id="toolsPlayerStatus" class="hint" role="status">Selecciona un jugador para empezar.</p>
+            <p id="toolsResult" class="tools-result" role="status" aria-live="polite"></p>
+          </article>
+          <div class="two-columns tools-grid">
+            <article class="section-card"><div class="section-title"><h3>Objetos y experiencia</h3></div>
+              <form id="toolsGiveForm" class="tools-form">
+                <label for="toolsItem">Buscar objeto</label>
+                <div id="toolsItemPicker" class="tools-item-picker">
+                  <input id="toolsItem" placeholder="Escribe huevo, espada, mochila…" maxlength="150" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="toolsItemResults" aria-describedby="toolsItemCatalogStatus toolsItemSelection" required>
+                  <input id="toolsItemId" type="hidden">
+                  <div id="toolsItemResults" class="tools-item-results" role="listbox" aria-label="Objetos disponibles en el servidor" hidden></div>
+                </div>
+                <p id="toolsItemCatalogStatus" class="hint tools-item-catalog-status" role="status" aria-live="polite">Busca por nombre en español, nombre del mod o identificador.</p>
+                <p id="toolsItemSelection" class="tools-item-selection" aria-live="polite">Selecciona un objeto de los resultados.</p>
+                <div class="tools-inline"><label for="toolsItemAmount">Cantidad<input id="toolsItemAmount" type="number" min="1" max="64" value="1" required></label><button id="toolsGiveButton" class="button primary" type="submit" disabled>Dar objeto</button></div>
+                <p class="hint">El catálogo incluye los objetos cargados por el servidor. Los mods nuevos aparecen después de reiniciarlo. Deja espacio en el inventario.</p>
+              </form>
+              <form id="toolsXpForm" class="tools-form"><label for="toolsXp">Niveles de experiencia</label><div class="tools-inline"><input id="toolsXp" type="number" min="0" max="10000" value="30" required><button class="button primary" type="submit">Añadir niveles</button><button id="toolsXpSet" class="button secondary" type="button">Fijar total</button></div></form>
+            </article>
+            <article class="section-card"><div class="section-title"><h3>Salud y modo de juego</h3></div>
+              <div class="tools-inline"><button class="button primary" type="button" data-tool-action="heal">Curar</button><button class="button secondary" type="button" data-tool-action="feed">Llenar comida</button></div>
+              <form id="toolsModeForm" class="tools-form"><label for="toolsMode">Modo de juego</label><div class="tools-inline"><select id="toolsMode"><option value="survival">Supervivencia</option><option value="creative">Creativo</option><option value="adventure">Aventura</option><option value="spectator">Espectador</option></select><button class="button secondary" type="submit">Aplicar</button></div></form>
+              <button id="toolsKill" class="button danger" type="button">Matar al jugador…</button><p class="hint">Matar requiere confirmación y provoca la muerte normal del personaje.</p>
+            </article>
+            <article class="section-card"><div class="section-title"><h3>Teletransporte</h3></div>
+              <form id="toolsTpPlayerForm" class="tools-form"><label for="toolsDestination">Hacia otro jugador conectado</label><div class="tools-inline"><select id="toolsDestination"></select><button class="button secondary" type="submit">Teletransportar</button></div></form>
+              <form id="toolsTpPositionForm" class="tools-form"><label for="toolsDimension">A coordenadas</label><select id="toolsDimension"><option value="minecraft:overworld">Overworld</option><option value="minecraft:the_nether">Nether</option><option value="minecraft:the_end">End</option></select><div class="tools-coords"><label>X<input id="toolsX" type="number" step="any" required></label><label>Y<input id="toolsY" type="number" step="any" required></label><label>Z<input id="toolsZ" type="number" step="any" required></label></div><button class="button secondary" type="submit">Ir a coordenadas…</button></form>
+            </article>
+            <article class="section-card"><div class="section-title"><h3>Terror y sonidos</h3></div>
+              <label class="tools-check"><input id="toolsWait" type="checkbox"> Si está desconectado, esperar a que entre</label>
+              <div class="tools-inline"><button class="button primary" data-tool-action="jumpscare" type="button">Jumpscare</button><button class="button secondary" data-tool-action="herobrine" type="button">Aparecer Herobrine</button></div>
+              <p class="hint">El jumpscare queda en cola hasta que el jugador se queda quieto. Necesita partículas visibles. Herobrine aparece a unos 8 bloques, sin nombre.</p>
+              <form id="toolsSoundForm" class="tools-form"><label for="toolsSound">Sonido solo para ese jugador</label><div class="tools-inline"><select id="toolsSound"><option value="explosion">Explosión, sin daño</option><option value="ghast">Grito de ghast</option><option value="creeper">Mecha de creeper</option><option value="cave">Ambiente de cueva</option></select><button class="button secondary" type="submit">Reproducir</button></div></form>
+              <p class="hint">Las acciones pendientes se ejecutan una sola vez y caducan a las 6 horas. Se pueden cancelar abajo.</p>
+            </article>
+          </div>
+          <article class="section-card tools-deaths"><div class="section-title"><div><p class="eyebrow">RECUPERACIÓN</p><h3>Muertes y lápidas</h3></div><button id="toolsLoadDeaths" class="button secondary" type="button">Ver muertes del jugador</button></div><p class="hint">Selecciona una o dos muertes. Se entregan lápidas completas: colócalas y rómpelas para recuperar los objetos. Deja un hueco libre por lápida. Se guarda una copia previa. No recuperes además los objetos de la lápida original para evitar duplicarlos.</p><div id="toolsDeaths" class="tools-death-list"><p class="muted">Elige un jugador y pulsa «Ver muertes».</p></div><button id="toolsRestore" class="button primary" type="button" disabled>Entregar lápidas seleccionadas</button></article>
+          <div class="two-columns tools-grid"><article class="section-card"><div class="section-title"><h3>Acciones pendientes</h3></div><ul id="toolsJobs" class="player-list"></ul></article><article class="section-card"><div class="section-title"><h3>Últimas acciones del panel</h3><button id="toolsClearHistory" type="button" class="button secondary small-button">Limpiar registro</button></div><ul id="toolsHistory" class="player-list"></ul><p class="hint">Ocultar el anuncio no borra los registros del servidor.</p></article></div>
+        </section>
+
+        <section id="view-mods" class="view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">ARCHIVOS DEL SERVIDOR</p>
+              <h2>Mods</h2>
+              <p class="muted">Sube o quita mods del servidor.</p>
+            </div>
+            <div class="inline-actions">
+              <button id="checkModUpdatesButton" class="button primary" type="button">Buscar actualizaciones</button>
+              <button id="updateAllModsButton" class="button primary" type="button">Actualizar Todo</button>
+              <button id="refreshModsButton" class="button secondary" type="button">Actualizar lista e imágenes</button>
+            </div>
+          </div>
+          <p id="modUpdatesStatus" class="hint" role="status"></p>
+          <div id="modsBatchProgress" class="operation-progress hidden" role="status" aria-live="polite">
+            <div class="operation-progress-heading"><span id="modsBatchProgressLabel">Preparando actualizaciones…</span><strong id="modsBatchProgressPercent">0%</strong></div>
+            <progress id="modsBatchProgressBar" max="100" value="0">0%</progress>
+            <small id="modsBatchProgressDetail"></small>
+            <ul id="modsBatchProgressItems" class="batch-mod-list"></ul>
+          </div>
+          <div id="pendingModsNotice" class="section-card hidden">
+            <strong>Mods preparados para el próximo inicio</strong>
+            <p class="hint">El servidor sigue usando las versiones actuales hasta reiniciar.</p>
+            <ul id="pendingModsList" class="batch-mod-list"></ul>
+            <button id="applyPendingModsButton" class="button primary" type="button">Reiniciar y aplicar mods</button>
+          </div>
+          <div id="modsRefreshProgress" class="operation-progress hidden" role="status" aria-live="polite">
+            <div class="operation-progress-heading"><span id="modsRefreshProgressLabel">Preparando la actualización…</span><strong id="modsRefreshProgressPercent">0%</strong></div>
+            <progress id="modsRefreshProgressBar" max="100" value="0">0%</progress>
+            <small id="modsRefreshProgressDetail"></small>
+          </div>
+          <div class="section-card upload-card">
+            <div class="upload-copy">
+              <p class="eyebrow">AÑADIR MOD</p>
+              <h3>Sube un archivo .jar</h3>
+              <p class="muted">Debe ser compatible con la versión de Minecraft y el loader de este servidor. Tras cambiar mods, reinicia el servidor.</p>
+            </div>
+            <form id="uploadForm" class="upload-form">
+              <input id="modFile" type="file" accept=".jar,application/java-archive" required>
+              <button class="button primary" type="submit">Subir mod</button>
+            </form>
+            <p id="uploadResult" class="hint"></p>
+          </div>
+          <div class="section-card">
+            <div class="section-title">
+              <div><p class="eyebrow">CARPETA /MODS</p><h3>Mods instalados</h3></div>
+              <div class="inline-actions">
+                <label class="sr-only" for="modsSort">Ordenar mods</label>
+                <select id="modsSort" aria-label="Ordenar mods instalados">
+                  <option value="name-asc">Nombre A–Z</option>
+                  <option value="added-desc">Añadidos recientemente</option>
+                </select>
+                <span id="modCount" class="count-pill">—</span>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Mod</th><th>Tamaño</th><th></th></tr></thead>
+                <tbody id="modsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-mod-search" class="view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">CATÁLOGO CURSEFORGE</p>
+              <h2>Buscador de Mods</h2>
+              <p class="muted">Busca e instala mods compatibles con la versión y el loader de este servidor.</p>
+            </div>
+          </div>
+          <article class="section-card">
+            <div class="section-title">
+              <div><p class="eyebrow">CURSEFORGE</p><h3>Buscar mods compatibles</h3></div>
+              <span id="curseForgeStatus" class="count-pill">Comprobando conexión…</span>
+            </div>
+            <p class="muted">Las imágenes y versiones vienen de CurseForge y se filtran automáticamente a la versión y al loader de este servidor.</p>
+            <form id="curseForgeKeyForm" class="curseforge-key-form">
+              <input id="curseForgeKey" type="password" autocomplete="off" placeholder="Clave API de CurseForge" aria-label="Clave API de CurseForge">
+              <button class="button secondary" type="submit">Guardar clave</button>
+              <button id="removeCurseForgeKey" class="button ghost" type="button">Quitar clave</button>
+            </form>
+            <p class="hint">La clave se guarda solo en este PC dentro de la carpeta privada del panel. No la compartas por el chat.</p>
+            <form id="curseForgeSearchForm" class="curseforge-search-form">
+              <input id="curseForgeQuery" type="text" minlength="2" maxlength="100" placeholder="Buscar por nombre, por ejemplo furniture" required>
+              <select id="curseForgeSort" aria-label="Ordenar resultados">
+                <option value="downloads-desc">Más relevantes · más descargas</option>
+                <option value="downloads-asc">Menos descargas</option>
+                <option value="name-asc">Nombre A–Z</option>
+                <option value="name-desc">Nombre Z–A</option>
+              </select>
+              <button class="button primary" type="submit">Buscar en CurseForge</button>
+            </form>
+            <form id="curseForgeUrlForm" class="curseforge-search-form">
+              <input id="curseForgeUrl" type="text" maxlength="2048" placeholder="Pega la URL del mod de CurseForge" aria-label="URL del mod de CurseForge" required>
+              <button class="button secondary" type="submit">Abrir mod en el panel</button>
+            </form>
+            <p id="curseForgeSearchStatus" class="hint" role="status"></p>
+            <div id="curseForgeInstallProgress" class="operation-progress hidden" role="status" aria-live="polite">
+              <div class="operation-progress-heading"><span id="curseForgeInstallProgressLabel">Preparando la instalación…</span><strong id="curseForgeInstallProgressPercent">0%</strong></div>
+              <progress id="curseForgeInstallProgressBar" max="100" value="0">0%</progress>
+              <small id="curseForgeInstallProgressDetail"></small>
+            </div>
+            <div id="curseForgeResults" class="curseforge-results"></div>
+          </article>
+        </section>
+      </main>
+    </div>
+  
+  <dialog id="serverWizard" class="manager-dialog">
+    <form id="serverWizardForm"><div class="section-title"><h2 id="wizardTitle">Crear servidor</h2><button id="wizardClose" type="button" class="button ghost">Cerrar</button></div>
+      <p id="wizardStepLabel" class="eyebrow">1 · VERSIÓN Y TIPO</p><p id="wizardError" class="error-text" role="alert"></p>
+      <div id="wizardStep1" class="wizard-step">
+        <label>Versión de Minecraft<select id="wizardVersion" required></select></label>
+        <div class="inline-actions"><label class="checkbox-row"><input id="wizardSnapshots" type="checkbox"> Mostrar snapshots y versiones experimentales</label><button id="wizardRefreshVersions" class="button secondary small-button" type="button">Actualizar catálogo</button></div>
+        <label>Tipo de servidor<select id="wizardLoader"><option value="vanilla">Vanilla · sin mods</option><option value="neoforge">NeoForge</option><option value="forge">Forge</option><option value="fabric">Fabric</option></select></label>
+        <label id="wizardLoaderVersionLabel" class="hidden">Versión del loader<select id="wizardLoaderVersion"></select></label>
+        <p id="wizardCompatibility" class="hint" role="status"></p>
+      </div>
+      <div id="wizardStep2" class="wizard-step hidden">
+        <label>Nombre del servidor<input id="wizardName" value="Mi servidor" maxlength="80" required></label>
+        <div class="manager-fields"><label>RAM máxima<select id="wizardMemory"><option value="1024">1 GB</option><option value="2048">2 GB</option><option value="3072">3 GB</option><option value="4096" selected>4 GB</option><option value="6144">6 GB</option><option value="8192">8 GB</option><option value="12288">12 GB</option><option value="16384">16 GB</option><option value="24576">24 GB</option><option value="32768">32 GB</option></select></label><label>Jugadores máximos<input id="wizardPlayers" type="number" min="1" max="1000" value="20"></label></div>
+        <div class="manager-fields"><label>Dificultad<select id="wizardDifficulty"><option value="peaceful">Pacífica</option><option value="easy">Fácil</option><option value="normal" selected>Normal</option><option value="hard">Difícil</option></select></label><label>Semilla (opcional)<input id="wizardSeed" maxlength="100" placeholder="Aleatoria"></label></div>
+        <label>Dominio o IP pública<input id="wizardHost" value="127.0.0.1" required></label>
+        <div class="manager-fields"><label>Puerto del juego<input id="wizardPort" type="number" min="1024" max="65535" required></label><label>Puerto público del router<input id="wizardExternalPort" type="number" min="1024" max="65535" required></label></div>
+        <label>Dirección local de escucha<select id="wizardBind"></select></label>
+        <label class="checkbox-row"><input id="wizardFirewall" type="checkbox" checked> Intentar crear automáticamente la regla de Windows para este servidor.</label>
+        <label class="checkbox-row"><input id="wizardUpnp" type="checkbox" checked> Intentar abrir automáticamente su puerto en el router mediante UPnP.</label>
+        <p class="hint">Si Windows o el router no lo permiten, el servidor quedará preparado y el panel indicará qué paso falta para la conexión externa.</p>
+        <p class="hint">El dominio puede ser el mismo para todos. Cada servidor necesita un puerto diferente. La RAM máxima no se reserva entera al arrancar; todos comparten la CPU y la memoria de este PC.</p>
+      </div>
+      <div id="wizardStep3" class="wizard-step hidden"><div id="wizardSummary" class="manager-summary"></div>
+        <label id="wizardEulaRow" class="checkbox-row"><input id="wizardEula" type="checkbox"> He leído y acepto la <a href="https://www.minecraft.net/eula" target="_blank" rel="noopener">EULA de Minecraft</a> para este servidor.</label>
+        <label id="wizardBackupRow" class="checkbox-row hidden"><input id="wizardBackup" type="checkbox"> Crear una copia completa antes del cambio de versión o loader.</label>
+        <p class="hint">La instalación prepara un servidor independiente y lo deja apagado. Después podrás revisar la conexión y arrancarlo. Los loaders y mods solo se activan al iniciar Minecraft.</p>
+      </div>
+      <div class="manager-footer"><button id="wizardPrevious" class="button secondary" type="button">Anterior</button><button id="wizardNext" class="button primary" type="button">Continuar</button><button id="wizardSubmit" class="button primary hidden" type="submit">Crear servidor</button></div>
+    </form>
+  </dialog>
+  <dialog id="connectionDialog" class="manager-dialog"><div class="section-title"><h2>Conexión del servidor</h2><button id="connectionClose" class="button ghost" type="button">Cerrar</button></div><p id="connectionName" class="muted"></p><p id="connectionError" class="error-text" role="alert"></p>
+    <form id="connectionForm"><label>Dominio o IP pública<input id="connectionHost" required></label><div class="manager-fields"><label>Puerto del juego<input id="connectionPort" type="number" min="1024" max="65535" required></label><label>Puerto público<input id="connectionExternalPort" type="number" min="1024" max="65535" required></label></div><label>IP local de escucha<select id="connectionBind"></select></label><button id="connectionSave" class="button primary" type="submit">Guardar configuración</button></form>
+    <div class="manager-summary"><strong>Regla para el router</strong><pre id="connectionRule"></pre><p id="connectionChecks" class="hint"></p><p class="hint">No abras el puerto del panel ni RCON en el router. La comprobación local no confirma el acceso desde Internet.</p></div><div class="inline-actions"><button id="connectionFirewall" class="button secondary" type="button">Crear regla de Windows</button><button id="connectionUpnp" class="button secondary" type="button">Intentar abrir puerto con UPnP</button><button id="connectionRefresh" class="button ghost" type="button">Comprobar conexión local</button></div>
+  </dialog>
+
+  <dialog id="featureTrustDialog" class="manager-dialog"><div class="section-title"><h2>Resolver huella antigua</h2><button id="featureTrustClose" type="button" class="button ghost">Cerrar</button></div>
+   <p id="featureTrustServer" class="muted"></p><p id="featureTrustError" class="error-text" role="alert"></p>
+   <div class="manager-summary"><strong>La confianza se actualiza en Minecraft</strong><p>Al recrear un servidor, AutoModpack puede generar otro certificado. Cada jugador conserva la huella anterior en su PC. Este panel no puede borrarla a distancia.</p><p>Estas opciones leen la huella actual del servidor seleccionado; no cambian sus certificados ni sus claves.</p></div>
+   <ol class="trust-steps"><li>En Minecraft, abre <strong>Multijugador</strong>, selecciona la entrada antigua y pulsa <strong>Editar</strong>.</li><li>Si conserva la huella anterior, pulsa dos veces <strong>Certificate pin</strong> para retirarla de esa entrada.</li><li>Pega la nueva dirección con huella en <strong>Dirección del servidor</strong> y guarda. Usa la dirección local desde casa o la pública desde fuera.</li><li>Vuelve a conectar. AutoModpack importará la huella actual. Si solicita verificarla, compárala con la que muestra este panel.</li></ol>
+   <div class="trust-address"><strong>Desde casa · red local</strong><div class="server-address-line address-concealed"><code id="featureTrustLocal" class="server-card-address"></code><button type="button" data-reveal-address class="button secondary address-reveal">Mostrar</button><button id="featureTrustCopyLocal" class="button primary" type="button">Copiar dirección local nueva</button></div></div>
+   <div class="trust-address"><strong>Para amigos · acceso público</strong><div class="server-address-line address-concealed"><code id="featureTrustPublic" class="server-card-address"></code><button type="button" data-reveal-address class="button secondary address-reveal">Mostrar</button><button id="featureTrustCopyPublic" class="button primary" type="button">Copiar dirección pública nueva</button></div></div>
+   <div class="trust-address"><strong>Huella actual del servidor</strong><div class="server-address-line address-concealed"><code id="featureTrustFingerprint" class="server-card-address"></code><button type="button" data-reveal-address class="button secondary address-reveal">Mostrar</button><button id="featureTrustCopyFingerprint" class="button secondary" type="button">Copiar huella actual</button></div></div>
+   <div class="inline-actions"><button id="featureTrustCopyGuide" class="button secondary" type="button">Copiar pasos para los jugadores</button><button id="featureTrustRefresh" class="button ghost" type="button">Leer huella actual</button></div><p id="featureTrustUpdated" class="hint"></p><p class="hint">Si el cambio de certificado no lo has hecho tú ni lo ha confirmado el administrador, conserva el anclaje y revisa la dirección antes de aceptar otra huella.</p>
+  </dialog>
+  <div id="toast" class="toast" role="status"></div>
+  </div>
+</body>
+</html>

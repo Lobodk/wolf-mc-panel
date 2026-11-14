@@ -1,0 +1,7 @@
+Wolf MC Panel — Windows x64
+
+This installer installs the program for the current Windows user and preserves application data when uninstalled. Minecraft, Java and mods are downloaded separately when requested. You must review Minecraft's EULA and the terms of any third-party service you use.
+
+The installer is unsigned. Verify its source and SHA-256. The panel starts with local-only access and does not open router ports automatically. Firewall changes may require separate administrator permission. Read the included guide before exposing a game server or the administrator panel.
+
+Back up valuable worlds independently before updates, restores or maintenance. No software can guarantee compatibility with every Minecraft/mod version. See LICENSE, THIRD-PARTY-NOTICES.md and the included documentation.
