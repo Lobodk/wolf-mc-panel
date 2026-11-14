@@ -4,7 +4,7 @@ const {createHosting,loopback}=require('./hosting.cjs');
 const {executable,startProxy}=require('./proxy.cjs');
 const {createAuth}=require('./auth.cjs');
 const {defaultDataDir}=require('./paths.cjs');
-const PRODUCT='Wolf MC Panel',VERSION='1.0.0';
+const PRODUCT='Wolf MC Panel',VERSION='1.0.1';
 async function start({dataDir=defaultDataDir(),port=Number(process.env.WOLF_PANEL_PORT||process.env.LOBO_PANEL_PORT)||8787,legacy=null}={}){
  if(process.platform!=='win32'&&!process.env.LOBO_PANEL_FIXTURE)throw Error('Esta versión requiere Windows x64.');
  dataDir=path.resolve(dataDir);fs.mkdirSync(dataDir,{recursive:true});
@@ -47,6 +47,9 @@ async function start({dataDir=defaultDataDir(),port=Number(process.env.WOLF_PANE
    if(url.pathname.startsWith('/api/')){
     const localShutdown=url.pathname==='/api/app/local-shutdown'&&req.method==='POST'&&!req.headers.origin&&loopback(req.socket.remoteAddress)&&main.constantTimeTokenMatch((req.headers.authorization||'').replace(/^Bearer /,''));
     if(!auth.identify(req)&&!localShutdown)return send(res,401,{error:'Inicia sesión en el panel.'});
+    if(url.pathname==='/api/app/guide'&&req.method==='POST'){if(prefs.guideSeen!==true){const next={...prefs,guideSeen:true};write(prefsFile,next);prefs=next;}return send(res,200,{ok:true,seen:true});}
+    if(url.pathname==='/api/app/onboarding'&&req.method==='GET')return send(res,200,{seen:prefs.onboardingSeen===true});
+    if(url.pathname==='/api/app/onboarding'&&req.method==='POST'){if(prefs.onboardingSeen!==true){const next={...prefs,onboardingSeen:true};write(prefsFile,next);prefs=next;}return send(res,200,{ok:true,seen:true});}
     if(url.pathname==='/api/app/session'&&req.method==='GET')return send(res,200,{ok:true,passwordConfigured:auth.configured(),instanceId});
     if(url.pathname==='/api/app/password'&&req.method==='PUT'){rateLimit(req);const data=await main.readJson(req);await auth.change(data.current,data.password,res);return send(res,200,{ok:true,passwordConfigured:true,message:'Contraseña guardada localmente. La clave inicial ya no permite iniciar sesión.'});}
     // Child instances share the internal key; it never leaves the backend.
@@ -58,7 +61,7 @@ async function start({dataDir=defaultDataDir(),port=Number(process.env.WOLF_PANE
      if(!name||name.length>60||/[\x00-\x1f]/.test(name))return send(res,400,{error:'El nombre debe tener entre 1 y 60 caracteres.'});
      if(typeof data.icon!=='string')return send(res,400,{error:'Icono no válido.'});
      if(data.icon){if(!/^data:image\/png;base64,[a-z0-9+/]+=*$/i.test(data.icon))return send(res,400,{error:'El icono debe ser PNG.'});validateIcon(Buffer.from(data.icon.split(',')[1],'base64'));}
-     prefs={name,icon:data.icon};write(prefsFile,prefs);return send(res,200,{...prefs,message:'Personalización guardada.'});
+     const next={...prefs,name,icon:data.icon};write(prefsFile,next);prefs=next;return send(res,200,{...prefs,message:'Personalización guardada.'});
     }
     if((url.pathname==='/api/app/shutdown'||url.pathname==='/api/app/local-shutdown')&&req.method==='POST'){
      const records=manager.records();

@@ -40,7 +40,7 @@ A free, open-source Minecraft Java server manager for **Windows x64**. Create lo
 5. Click **Create server**, choose a version and optional loader, set resources and connection details, then read and accept Minecraft's EULA if you agree. The panel downloads the required server files and Java.
 6. Open the prepared server and start it. Test locally before connecting friends from outside your network.
 
-The guided first-run tour points you to the built-in guide and FAQ. You can repeat it later. Opening the guide and returning to the panel preserves your signed-in session.
+The guided first-run tour points you to the built-in guide and FAQ. You can repeat it later. The panel remembers that the tutorial has been shown and the guide has been opened, so dismissed hints do not return on later logins or in another browser. Opening the guide and returning to the panel preserves your signed-in session.
 
 The installer is currently unsigned. Windows may display its normal publisher/reputation warning. Obtain it from this repository and verify the checksum; do not disable your security protections. It does not bundle Minecraft, Java, modpacks, paid services or another person's API key.
 

@@ -1,4 +1,6 @@
 'use strict';
+// Record an actual guide visit, including direct links and opening a new tab.
+fetch('/api/app/guide',{method:'POST',keepalive:true}).catch(()=>{});
 const server=new URLSearchParams(location.search).get('server');
 if(server)document.querySelector('.help-page > a').href='/?server='+encodeURIComponent(server);
 const vendors={tplink:['https://www.tp-link.com/support/','Busca el modelo y la función Port Forwarding o Virtual Servers en su manual.'],asus:['https://www.asus.com/support/','Busca el modelo y la configuración WAN / Virtual Server / Port Forwarding.'],netgear:['https://www.netgear.com/support/','Busca el modelo y la sección Port Forwarding / Port Triggering.'],fritz:['https://en.avm.de/service/','Busca el modelo y la ayuda de acceso a Internet y puertos compartidos.'],unifi:['https://help.ui.com/','Consulta el modelo de gateway y la ayuda de Port Forwarding.'],mikrotik:['https://manual.mikrotik.com/','Consulta la documentación de RouterOS sobre NAT y dstnat.'],other:['','Consulta el manual del modelo exacto o el soporte del operador. No introduzcas las credenciales del router en este panel.']};

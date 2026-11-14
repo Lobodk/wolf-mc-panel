@@ -9,18 +9,27 @@ test('Clean installation uses cookie sessions, persists hashed passwords and con
   const headersFor=response=>({Cookie:response.headers.get('set-cookie').split(';')[0],'Content-Type':'application/json'});
   assert.equal(app.server.address().address,'127.0.0.1');
   assert.equal((await fetch(url+'api/servers')).status,401);
+  assert.equal((await fetch(url+'api/app/onboarding')).status,401);
+  assert.equal((await fetch(url+'api/app/guide',{method:'POST'})).status,401);
   assert.equal((await fetch(url+'api/servers',{headers:{Authorization:'Bearer '+initial}})).status,401);
   assert.equal((await fetch(url+'api/login',{method:'POST',headers:{Origin:'https://unrelated.example','Content-Type':'application/json'},body:JSON.stringify({token:initial})})).status,403);
   const first=await login(initial);assert.equal(first.status,200);assert.match(first.headers.get('set-cookie'),/HttpOnly; SameSite=Strict/);let headers=headersFor(first);
   assert.deepEqual((await (await fetch(url+'api/servers',{headers})).json()).servers,[]);
   assert.equal((await fetch(url+'api/status',{headers})).status,400);
   assert.equal((await fetch(url+'api/app/session',{headers})).status,200);
+  assert.equal((await (await fetch(url+'api/app/onboarding',{headers})).json()).seen,false);
+  assert.equal((await fetch(url+'api/app/onboarding',{method:'POST',headers})).status,200);
+  assert.equal((await (await fetch(url+'api/app/onboarding',{headers})).json()).seen,true);
+  assert.notEqual((await (await fetch(url+'api/app/info')).json()).guideSeen,true);
+  assert.equal((await fetch(url+'api/app/guide',{method:'POST',headers})).status,200);
   assert.equal((await fetch(url+'api/app/preferences',{method:'PUT',headers:{...headers,Origin:'https://unrelated.example'},body:JSON.stringify({name:'Other',icon:''})})).status,403);
   assert.equal((await fetch(url+'api/app/preferences',{method:'PUT',headers,body:JSON.stringify({name:'',icon:''})})).status,400);
   const info=await (await fetch(url+'api/app/info')).json();assert.equal(JSON.stringify(info).includes(initial),false);assert.equal(info.name,'Wolf MC Panel');
   assert.equal((await fetch(url+'help.html')).status,200);assert.equal((await fetch(url+'logo.png')).status,200);
   assert.equal((await fetch(url+'api/app/session',{headers})).status,200,'Guide return needs no selected server');
   assert.equal((await fetch(url+'api/app/preferences',{method:'PUT',headers,body:JSON.stringify({name:'Mi panel de pruebas',icon:''})})).status,200);
+  assert.equal((await (await fetch(url+'api/app/onboarding',{headers})).json()).seen,true,'Changing branding does not reset the tour');
+  assert.equal((await (await fetch(url+'api/app/info')).json()).guideSeen,true,'Changing branding does not reset the guide notice');
   const password='A private test fixture password 2026';
   assert.equal((await fetch(url+'api/app/password',{method:'PUT',headers,body:JSON.stringify({current:initial,password:'short'})})).status,400);
   assert.equal((await fetch(url+'api/app/password',{method:'PUT',headers,body:JSON.stringify({current:'wrong',password})})).status,403);
@@ -37,6 +46,8 @@ test('Clean installation uses cookie sessions, persists hashed passwords and con
   assert.equal(fs.readFileSync(propertiesFile,'utf8'),originalProperties,'Restarting the panel preserves existing Minecraft settings and line endings');
   assert.equal((await (await fetch(url+'api/app/info')).json()).name,'Mi panel de pruebas');assert.equal((await fetch(url+'api/app/session',{headers})).status,401);
   const again=await login(password);assert.equal(again.status,200);headers=headersFor(again);
+  assert.equal((await (await fetch(url+'api/app/onboarding',{headers})).json()).seen,true,'The tour remains complete after a panel restart and a new login');
+  assert.equal((await (await fetch(url+'api/app/info')).json()).guideSeen,true,'The guide notice remains dismissed after a panel restart');
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dataDir,'servers.json'))),[]);
   assert.equal((await fetch(url+'api/logout',{method:'POST',headers})).status,200);assert.equal((await fetch(url+'api/app/session',{headers})).status,401);
  }finally{if(app)await app.close();assert.ok(dataDir.startsWith(path.join(os.tmpdir(),'lobo-alpha-')));fs.rmSync(dataDir,{recursive:true,force:true});}

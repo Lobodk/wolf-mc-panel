@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1 — 2026-11-14
+
+- Remember completion of the first-run tutorial on the panel host, including new logins, browser changes and panel restarts. Manual replay remains available.
+- Hide the guide reminder after the first guide visit, including direct links and opening the guide in another tab.
+- Place the tutorial arrow between the nearest card and guide edges, with responsive positioning and no looping line beneath the card.
+- Preserve both completion flags when changing the panel name/logo and when reinstalling.
+- Refresh the relevant browser assets on upgrade and update the tutorial screenshot.
+
 ## 1.0.0 — 2026-11-14
 
 First public Windows x64 release of Wolf MC Panel.

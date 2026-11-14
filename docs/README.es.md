@@ -14,7 +14,7 @@ Un panel gratuito y de código abierto para crear y administrar servidores de Mi
 4. Pulsa Crear Servidor. Elige Minecraft, loader opcional, RAM y conexión. Lee y acepta la EULA de Minecraft si estás de acuerdo. El panel prepara Java y los archivos del servidor.
 5. Abre Administrar e inicia el servidor. Prueba primero desde el mismo equipo, después desde tu red local y finalmente desde fuera.
 
-La interfaz empieza en español. El selector permite inglés, alemán, francés, turco y portugués de Brasil. La guía integrada explica cada paso y el tutorial inicial indica dónde encontrarla.
+La interfaz empieza en español. El selector permite inglés, alemán, francés, turco y portugués de Brasil. La guía integrada explica cada paso y el tutorial inicial indica dónde encontrarla. El panel recuerda el tutorial visto y la primera visita a la guía: no repite los avisos al volver a entrar ni al cambiar de navegador. Puedes repetir el tutorial desde Ver primeros pasos.
 
 ## Funciones
 

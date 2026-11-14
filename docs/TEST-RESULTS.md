@@ -1,4 +1,12 @@
-# Release verification — 1.0.0
+# Release verification
+
+## 1.0.1
+
+64 automated checks pass on Windows, including regression coverage for tutorial persistence, guide acknowledgement, branding changes, new browsers, blocked browser storage, repeated authentication events, cancelled timers and arrow placement on desktop/narrow screens. The actual browser review covered opening the guide, returning to the panel, another login, the updated arrow and a 620-pixel responsive viewport. Installer validation also checks that the completion flags survive a reinstall.
+
+The 1.0.1 release attaches its own installer checksum and validation receipt. The real Minecraft world lifecycle test below was performed for 1.0.0; 1.0.1 changes onboarding/UI state and does not claim that this world test was repeated.
+
+## 1.0.0
 
 Prepared on 2026-11-14 for Windows x64. Test evidence is specific to the checked configuration, not a guarantee for every Minecraft version, modpack or network.
 

@@ -1,8 +1,8 @@
 'use strict';
 (() => {
  const make=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
- let settings={name:'Wolf MC Panel',icon:''},image='',ready=false;
- function apply(){for(const el of document.querySelectorAll('.brand h1,.login-card h1'))if(el.textContent!==settings.name)el.textContent=settings.name;for(const img of document.querySelectorAll('.brand-mark img'))if(img.getAttribute('src')!==(settings.icon||'/logo.png'))img.src=settings.icon||'/logo.png';document.title=settings.name+' · Panel';}
+ let settings={name:'Wolf MC Panel',icon:''},image='',ready=false,guideRead=false;
+ function apply(){for(const el of document.querySelectorAll('.brand h1,.login-card h1'))if(el.textContent!==settings.name)el.textContent=settings.name;for(const img of document.querySelectorAll('.brand-mark img'))if(img.getAttribute('src')!==(settings.icon||'/logo.png'))img.src=settings.icon||'/logo.png';document.title=settings.name+' · Panel';if(ready)notice.classList.toggle('hidden',guideRead||settings.guideSeen===true);}
  const footer=document.querySelector('.sidebar-footer'),tools=make('div',undefined,'edition-tools');
  const help=make('a','Guía y preguntas frecuentes','edition-help');help.href='/help.html';help.id='editionHelp';
  const prefs=make('button','Personalizar el panel','edition-help');prefs.type='button';
@@ -20,6 +20,8 @@
  el('editionSave').addEventListener('click',async()=>{const button=el('editionSave');button.disabled=true;try{settings=await api('/api/app/preferences',{method:'PUT',body:JSON.stringify({name:el('editionName').value,icon:image})});apply();el('editionMessage').textContent=settings.message;}catch(error){el('editionMessage').textContent=error.message;}finally{button.disabled=false;}});
  const heading=document.querySelector('.topbar .brand h1');new MutationObserver(()=>{if(ready)apply();}).observe(heading,{childList:true});
  fetch('/api/app/info').then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{settings=data;ready=true;apply();}).catch(()=>{});
- const notice=make('p','Consulta la guía para crear servidores y configurar el acceso al panel.','edition-notice');document.querySelector('.content').prepend(notice);
+ const notice=make('p','Consulta la guía para crear servidores y configurar el acceso al panel.','edition-notice hidden');notice.id='guideNotice';document.querySelector('.content').prepend(notice);
+ function markGuideRead(event){if(event.button!==undefined&&event.button>1)return;const link=event.target.closest?.('a[href]');if(!link)return;let url;try{url=new URL(link.getAttribute('href'),location.href);}catch{return;}if(url.origin!==location.origin||url.pathname!=='/help.html')return;guideRead=true;notice.classList.add('hidden');fetch('/api/app/guide',{method:'POST',keepalive:true}).then(response=>{if(response.ok)settings.guideSeen=true;}).catch(()=>{});}
+ document.addEventListener('click',markGuideRead);document.addEventListener('auxclick',markGuideRead);
  document.querySelector('#accessKey').placeholder='Tu contraseña o la clave inicial';document.querySelector('label[for=accessKey]').textContent='Contraseña del panel';document.querySelector('.login-card .muted').textContent='Administra tus servidores de Minecraft desde este equipo.';document.querySelector('.login-card .hint').textContent='La primera vez se abre el archivo de acceso. También está en la carpeta de datos de Wolf MC Panel.';
 })();
