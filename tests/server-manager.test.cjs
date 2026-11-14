@@ -55,4 +55,16 @@ test('Deletion requires a fresh matching confirmation, protects main, and preser
 test('A Java process still alive prevents deletion even before its game port opens',async()=>{
  const f=fixture();try{const created=await f.manager.create(f.data);await f.finish(created.jobId);const rec=JSON.parse(fs.readFileSync(path.join(f.codeDir,'servers.json'))).find(r=>r.id===created.server.id);fs.writeFileSync(path.join(rec.directory,'panel/managed-process.json'),JSON.stringify({pid:process.pid}));await assert.rejects(f.request('/api/servers/'+rec.id+'/delete-intent','POST',{}),/Java/);assert.equal(fs.existsSync(rec.directory),true);}finally{f.cleanup();}
 });
+
+test('Recovery refuses a junction outside its managed folder and preserves the server',async()=>{
+ const f=fixture();try{
+  const created=await f.manager.create(f.data);await f.finish(created.jobId);
+  const rec=JSON.parse(fs.readFileSync(path.join(f.codeDir,'servers.json'))).find(r=>r.id===created.server.id);
+  const outside=path.join(f.root,'outside-recovery');fs.mkdirSync(outside);
+  fs.symlinkSync(outside,path.join(f.codeDir,'deleted-servers'),'junction');
+  const token=(await f.request('/api/servers/'+rec.id+'/delete-intent','POST',{})).data.token;
+  await assert.rejects(f.request('/api/servers/'+rec.id,'DELETE',{token,name:rec.name}),/enlace/);
+  assert.ok(fs.existsSync(rec.directory));assert.deepEqual(fs.readdirSync(outside),[]);
+ }finally{f.cleanup();}
+});
 test('Archived servers restore with a chosen free port, separate RCON, all world files and no automatic launch',async()=>{const f=fixture();try{const created=await f.manager.create(f.data);await f.finish(created.jobId);const id=created.server.id;const before=JSON.parse(fs.readFileSync(path.join(f.codeDir,'servers.json'))).find(r=>r.id===id);fs.mkdirSync(path.join(before.directory,'world'));fs.writeFileSync(path.join(before.directory,'world/keep'),'SAVE');const token=(await f.request('/api/servers/'+id+'/delete-intent','POST',{})).data.token;await f.request('/api/servers/'+id,'DELETE',{token,name:f.data.name});const archive=(await f.request('/api/deleted-servers')).data.servers[0];assert.equal(archive.id,id);await assert.rejects(f.request('/api/deleted-servers/'+archive.key+'/restore','POST',{serverPort:25565}),/reservado/);const result=await f.request('/api/deleted-servers/'+archive.key+'/restore','POST',{serverPort:25568});assert.equal(result.data.server.serverPort,25568);assert.equal(fs.readFileSync(path.join(before.directory,'world/keep'),'utf8'),'SAVE');const after=JSON.parse(fs.readFileSync(path.join(f.codeDir,'servers.json'))).find(r=>r.id===id),cfg=JSON.parse(fs.readFileSync(path.join(after.directory,'panel/panel-config.json')));assert.equal(cfg.serverPort,25568);assert.notEqual(cfg.rconPort,cfg.serverPort);assert.equal(JSON.parse(fs.readFileSync(path.join(after.directory,'panel/managed-process.json'))).pid,0);assert.equal((await f.request('/api/deleted-servers')).data.servers.length,0);await assert.rejects(f.request('/api/deleted-servers/../../evil/restore','POST',{}));}finally{f.cleanup();}});

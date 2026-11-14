@@ -861,11 +861,15 @@ async function restoreServerBackup(name) {
     if (!stagedWorld.isDirectory()) throw restoreRequestError('La copia no contiene una carpeta world válida.');
 
     serverWasRunning = await tcpOpen(options.record?.bindAddress || '127.0.0.1', config.serverPort);
+    let stoppingPid=0;
+    for(const name of ['telemetry/network.json','managed-process.json']){try{const value=Number(JSON.parse(await fsp.readFile(path.join(PANEL_DIR,name),'utf8')).pid);if(Number.isSafeInteger(value)&&value>0){stoppingPid=value;break;}}catch{}}
+    const stoppingProcessAlive=()=>{if(!stoppingPid)return false;try{process.kill(stoppingPid,0);return true;}catch(error){return error.code!=='ESRCH';}};
+    if(!serverWasRunning && stoppingProcessAlive())throw restoreRequestError('Java sigue arrancando o apagando este servidor. Espera y revisa la consola.',409);
     if (serverWasRunning) {
       await rconCommand('save-all', 10000);
       await rconCommand('stop', 8000).catch(() => '');
       await waitUntil(
-        async () => !(await tcpOpen(options.record?.bindAddress || '127.0.0.1', config.serverPort)),
+        async () => !(await tcpOpen(options.record?.bindAddress || '127.0.0.1', config.serverPort)) && !stoppingProcessAlive(),
         120000,
         'Minecraft no se apagó a tiempo. No se modificó ningún archivo del servidor.',
       );

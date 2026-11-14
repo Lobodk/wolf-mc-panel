@@ -4,7 +4,7 @@ Prepared on 2026-11-14 for Windows x64. Test evidence is specific to the checked
 
 | Check | Evidence / scope |
 | --- | --- |
-| Automated suite | 54 passing tests, zero failures and zero skips in the Windows source/build checks. Includes authentication and session revocation, origin/host validation, ZIP safety, staging, server isolation/recovery, MOTD round trips and five translation catalogs. |
+| Automated suite | 55 passing tests, zero failures and zero skips in the Windows source/build checks. Includes authentication and session revocation, origin/host validation, ZIP safety, staging, server isolation/recovery, MOTD round trips and five translation catalogs. |
 | Real Minecraft lifecycle | Official vanilla Minecraft 26.3, Java 25, isolated flat world and separate loopback game port. Created and started the server, placed and saved a diamond block, backed up while online, changed it to gold, restored the backup, restarted and confirmed the diamond block returned. No existing user world was used. |
 | Real HTTPS transport | Started the official Caddy runtime and connected through TLS using an isolated test certificate explicitly trusted by that request. Verified certificate validation, HTTPS login, Secure/HttpOnly/SameSite cookies, rejection of the bootstrap key after password setup, backend/origin restrictions and authenticated requests. No system certificate-store change or TLS bypass. |
 | Installer lifecycle | Per-user Windows install, EXE launch, empty initial server list, personal password creation, reinstall preserving password/preferences/data, EXE stop and uninstall preserving data. A release attachment records the actual installer SHA-256 and results. |
