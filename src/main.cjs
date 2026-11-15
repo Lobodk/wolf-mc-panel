@@ -4,7 +4,7 @@ const {createHosting,loopback}=require('./hosting.cjs');
 const {executable,startProxy}=require('./proxy.cjs');
 const {createAuth}=require('./auth.cjs');
 const {defaultDataDir}=require('./paths.cjs');
-const PRODUCT='Wolf MC Panel',VERSION='1.0.4';
+const PRODUCT='Wolf MC Panel',VERSION='1.0.5';
 async function start({dataDir=defaultDataDir(),port=Number(process.env.WOLF_PANEL_PORT||process.env.LOBO_PANEL_PORT)||8787,legacy=null}={}){
  if(process.platform!=='win32'&&!process.env.LOBO_PANEL_FIXTURE)throw Error('Esta versión requiere Windows x64.');
  dataDir=path.resolve(dataDir);fs.mkdirSync(dataDir,{recursive:true});

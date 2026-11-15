@@ -1151,7 +1151,7 @@ function renderCurseForgeResult(mod) {
           stopMonitoring();
           finishOperationProgress('curseForgeInstall', startedAt, true,
             `Descargado e instalado · ${formatBytes(result.bytes || 0)}${addedDependencies.length ? ` más ${addedDependencies.length} dependencia(s)` : ''}`);
-          await offerModRestart();
+
         } catch (error) {
           stopMonitoring();
           finishOperationProgress('curseForgeInstall', startedAt, false, error.message);
@@ -1216,12 +1216,14 @@ async function searchCurseForge(event) {
   const query = $('curseForgeQuery').value.trim();
   const button = $('curseForgeSearchForm').querySelector('button');
   const results = $('curseForgeResults');
+  const sortSelect = $('curseForgeSort');
   button.disabled = true;
+  sortSelect.disabled = true;
   $('curseForgeSearchStatus').textContent = 'Buscando en CurseForge…';
   results.replaceChildren();
   try {
     await refreshInstalledModsForSearch();
-    const data = await api('/api/curseforge/search?q=' + encodeURIComponent(query));
+    const data = await api('/api/curseforge/search?q=' + encodeURIComponent(query) + '&sort=' + encodeURIComponent(sortSelect.value || 'relevance'));
     curseForgeResultsCache = data.mods || [];
     $('curseForgeSearchStatus').textContent = curseForgeResultsCache.length
       ? `${curseForgeResultsCache.length} resultados compatibles · Minecraft ${data.minecraftVersion} / ${data.loader}`
@@ -1232,13 +1234,14 @@ async function searchCurseForge(event) {
     showToast(error.message, true);
   } finally {
     button.disabled = false;
+    sortSelect.disabled = false;
   }
 }
 
 function renderSortedCurseForgeResults() {
   const results = $('curseForgeResults');
   results.replaceChildren();
-  const sort = $('curseForgeSort')?.value || 'downloads-desc';
+  const sort = $('curseForgeSort')?.value || 'relevance';
   const mods = [...curseForgeResultsCache];
   if (!mods.length) {
     const empty = document.createElement('p');
@@ -1247,7 +1250,7 @@ function renderSortedCurseForgeResults() {
     results.append(empty);
     return;
   }
-  mods.sort((a, b) => {
+  if (sort !== 'relevance') mods.sort((a, b) => {
     if (sort === 'downloads-asc') return Number(a.downloads || 0) - Number(b.downloads || 0);
     if (sort === 'name-asc') return String(a.name || '').localeCompare(String(b.name || ''), 'es');
     if (sort === 'name-desc') return String(b.name || '').localeCompare(String(a.name || ''), 'es');
@@ -1351,9 +1354,7 @@ async function watchBulkModUpdates(id) {
     modUpdateResults.clear();
     await loadMods();
     $('modUpdatesStatus').textContent = result.error || `${result.pendingCount || 0} archivos preparados para reiniciar${result.failures?.length ? ' · ' + result.failures.length + ' aviso(s); revisa el detalle.' : '.'}`;
-    if (result.restartRequired) await offerModRestart(result.error || result.failures?.length
-      ? 'Hay mods preparados y algunos avisos (consulta la lista). ¿Reiniciar servidor para aplicar los preparados?'
-      : 'Mods actualizados, ¿reiniciar servidor?');
+    // Pending changes stay visible; restart only when the user chooses it.
   } catch (error) {
     showToast(error.message, true);
     $('modsBatchProgressDetail').textContent = error.message;
@@ -1585,7 +1586,7 @@ async function loadMods(options = {}) {
             showToast(mod.displayName + ' actualizado.' + dependencyMessage + ' Reinicia el servidor para cargar los cambios.');
             stopMonitoring();
             finishOperationProgress('modsBatch', startedAt, true, 'Actualización preparada. Se aplicará al reiniciar.');
-            await offerModRestart();
+
           } catch (error) {
             stopMonitoring();
             finishOperationProgress('modsBatch', startedAt, false, error.message);
@@ -1860,7 +1861,12 @@ $('neoForgeVersion').addEventListener('change', () => {
 $('curseForgeKeyForm').addEventListener('submit', saveCurseForgeKey);
 $('removeCurseForgeKey').addEventListener('click', removeCurseForgeKey);
 $('curseForgeSearchForm').addEventListener('submit', searchCurseForge);
-$('curseForgeSort').addEventListener('change', renderSortedCurseForgeResults);
+$('curseForgeSort').addEventListener('change', () => {
+  const query = $('curseForgeQuery').value.trim();
+  if (query.length >= 2 && query.length <= 100) {
+    searchCurseForge({ preventDefault() {} }).catch(error => showToast(error.message, true));
+  }
+});
 $('curseForgeUrlForm').addEventListener('submit', searchCurseForgeByUrl);
 $('clearConsoleButton').addEventListener('click', () => {
   $('consoleOutput').textContent = '';

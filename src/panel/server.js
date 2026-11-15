@@ -1273,7 +1273,14 @@ async function getCurseForgeMetadataForMods(mods, progressId = '') {
   return projectByFileName;
 }
 
-async function searchCurseForgeMods(query) {
+async function searchCurseForgeMods(query, sort = 'relevance') {
+  const searchSort = ({
+    relevance: ['13', 'desc'],
+    'downloads-desc': ['6', 'desc'],
+    'downloads-asc': ['6', 'asc'],
+    'name-asc': ['4', 'asc'],
+    'name-desc': ['4', 'desc'],
+  })[sort] || ['13', 'desc'];
   if (!CURSEFORGE_LOADER_ID) throw new Error('Este servidor es Vanilla. Instala un mod loader para buscar mods compatibles.');
   const params = new URLSearchParams({
     gameId: String(CURSEFORGE_GAME_ID),
@@ -1281,6 +1288,8 @@ async function searchCurseForgeMods(query) {
     gameVersion: CURSEFORGE_MC_VERSION,
     modLoaderType: String(CURSEFORGE_LOADER_ID),
     searchFilter: query,
+    sortField: searchSort[0],
+    sortOrder: searchSort[1],
     pageSize: '24',
   });
   const data = await curseForgeFetch('/mods/search?' + params.toString());
@@ -2157,7 +2166,7 @@ async function handleApi(req, res, url) {
   if (req.method === 'GET' && pathname === '/api/curseforge/search') {
     const query = (url.searchParams.get('q') || '').trim();
     if (query.length < 2 || query.length > 100) return sendJson(res, 400, { error: 'Escribe entre 2 y 100 caracteres para buscar.' });
-    return sendJson(res, 200, { mods: await searchCurseForgeMods(query), minecraftVersion: CURSEFORGE_MC_VERSION, loader: ({6:'NeoForge',1:'Forge',4:'Fabric'})[CURSEFORGE_LOADER_ID] || 'Vanilla' });
+    return sendJson(res, 200, { mods: await searchCurseForgeMods(query, url.searchParams.get('sort') || 'relevance'), minecraftVersion: CURSEFORGE_MC_VERSION, loader: ({6:'NeoForge',1:'Forge',4:'Fabric'})[CURSEFORGE_LOADER_ID] || 'Vanilla' });
   }
 
   if (req.method === 'GET' && pathname === '/api/curseforge/lookup-url') {

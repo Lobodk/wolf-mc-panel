@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.5
+
+- Added Relevance as the default CurseForge search order, separate from download counts. Search sorting now applies at the API before pagination, with server version and loader filters preserved.
+- Changing the search-order selector runs a new compatible search. Added translations in all six interface languages.
+- Removed automatic restart dialogs after mod installations and updates. Pending changes and the explicit restart control remain available.
+
+
 ## 1.0.4 — 2026-11-15
 
 - Use Wolf MC Panel consistently in the launcher, installer shortcuts, documentation and all six guide languages. The launcher is WolfMCPanel.exe and the default data directory is %LOCALAPPDATA%/WolfMCPanel/data.
