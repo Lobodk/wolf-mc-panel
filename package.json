@@ -1,6 +1,6 @@
 {
   "name": "wolf-mc-panel",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "private": false,
   "description": "Self-hosted Minecraft Java server management for Windows, LAN and HTTPS domains.",
   "license": "AGPL-3.0-only",

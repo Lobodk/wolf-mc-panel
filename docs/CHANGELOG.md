@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.7 — 2026-11-15
+
+- Fix optional CurseForge dependencies so they can be selected and installed with a mod.
+- Keep required libraries automatic and validate selected optional dependencies before installation.
+
 ## 1.0.6
 
 - CurseForge errors now explain the cause, suggested action, operation and HTTP/error code instead of treating every 403 as an invalid API key.
