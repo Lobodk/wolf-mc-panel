@@ -94,7 +94,7 @@ async function performApiRequest(url, options = {}) {
     logout(false);
     throw new Error('La sesión ha caducado. Vuelve a entrar.');
   }
-  if (!response.ok) throw new Error(data.error || 'Error en la petición.');
+  if (!response.ok) throw new Error(data.error || `Causa: el panel no pudo completar la petición (HTTP ${response.status}). Acción: vuelve a intentarlo y revisa la conexión o el diagnóstico si persiste.`);
   return data;
 }
 

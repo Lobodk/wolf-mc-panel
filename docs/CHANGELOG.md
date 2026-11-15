@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.6
+
+- CurseForge errors now explain the cause, suggested action, operation and HTTP/error code instead of treating every 403 as an invalid API key.
+- When a download is forbidden, the panel checks the project distribution setting. Confirmed author restrictions recommend downloading from CurseForge and uploading the JAR manually, without bypassing distribution restrictions.
+- Added distinct errors for rejected keys, request limits (including Retry-After seconds), missing files, provider failures, connection timeouts and unreadable responses. Error text excludes credentials and raw provider responses.
+
+
 ## 1.0.5
 
 - Added Relevance as the default CurseForge search order, separate from download counts. Search sorting now applies at the API before pagination, with server version and loader filters preserved.

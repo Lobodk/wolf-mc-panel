@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const { createCurseForgeClient, httpFailure, networkFailure } = require('./curseforge-client');
 const { createNetworkMonitor } = require('./network');
 const { createPlayerTools } = require('./player-tools');
 const { createItemCatalog } = require('./item-catalog');
@@ -998,20 +999,7 @@ function saveCurseForgeKey(apiKey) {
   fs.renameSync(temp, CURSEFORGE_CONFIG_FILE);
 }
 
-async function curseForgeFetch(endpoint, options = {}) {
-  const apiKey = getCurseForgeKey();
-  if (!apiKey) throw new Error('Añade primero tu clave API de CurseForge en la configuración de la pestaña Mods.');
-  const response = await fetch('https://api.curseforge.com/v1' + endpoint, {
-    ...options,
-    headers: { Accept: 'application/json', 'x-api-key': apiKey, ...(options.headers || {}) },
-    signal: AbortSignal.timeout(20000),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(response.status === 403 || response.status === 401
-    ? 'CurseForge rechazó la clave API o no está autorizada para esta integración.'
-    : 'CurseForge respondió con error HTTP ' + response.status + '.');
-  return data.data;
-}
+const { request: curseForgeFetch } = createCurseForgeClient({ getApiKey: getCurseForgeKey });
 
 function normalizeCurseForgeName(value) {
   let normalized = String(value || '')
@@ -1701,8 +1689,12 @@ async function downloadToFile(url, file, maxBytes = 300 * 1024 * 1024, onProgres
     hostname === 'forgecdn.net' || hostname.endsWith('.forgecdn.net') ||
     hostname === 'neoforged.net' || hostname.endsWith('.neoforged.net');
   if (parsed.protocol !== 'https:' || !trustedHost(parsed.hostname)) throw new Error('La URL de descarga no pertenece a CurseForge o NeoForged.');
-  const response = await fetch(parsed, { redirect: 'follow', signal: AbortSignal.timeout(10 * 60 * 1000) });
-  if (!response.ok || !response.body) throw new Error('No se pudo descargar el archivo (' + response.status + ').');
+  let response;
+  const operation = 'descargar ' + path.basename(file).replace(/^\.curseforge-[^.]+/, 'el archivo del mod');
+  try { response = await fetch(parsed, { redirect: 'follow', signal: AbortSignal.timeout(10 * 60 * 1000) }); }
+  catch (error) { throw networkFailure(error, operation); }
+  if (!response.ok) throw httpFailure(response.status, operation, { download: true, retryAfter: response.headers.get('retry-after') || '' });
+  if (!response.body) throw new Error('Causa: la descarga llegó sin contenido. Acción: vuelve a intentarlo. Operación: ' + operation + '.');
   if (!trustedHost(new URL(response.url).hostname)) throw new Error('La descarga redirigió a un dominio no autorizado.');
   const declared = Number(response.headers.get('content-length') || 0);
   if (declared > maxBytes) throw new Error('El archivo supera el límite de descarga.');
