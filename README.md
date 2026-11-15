@@ -99,7 +99,7 @@ See [HOSTING](docs/HOSTING.md) for local, LAN, HTTPS and recovery instructions.
 
 ## Data and backups
 
-Program files and your data are kept separately. New installations use %LOCALAPPDATA%/WolfMCPanel/data. Existing installations using %LOCALAPPDATA%/LoboServerPanel/data keep that folder. Uninstalling the program preserves data.
+Program files and your data are kept separately. Your data is stored in %LOCALAPPDATA%/WolfMCPanel/data. Uninstalling the program preserves data.
 
 Keep an independent copy of your worlds and backups on another disk. A backup on the same disk does not protect against that disk failing. Restoring a snapshot replaces later progress; it does not merge it.
 

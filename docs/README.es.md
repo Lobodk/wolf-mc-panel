@@ -71,7 +71,7 @@ La dirección para jugar y la del panel son diferentes. Un dominio no abre puert
 
 ## Datos y seguridad
 
-Los datos nuevos se guardan en %LOCALAPPDATA%/WolfMCPanel/data. Las instalaciones anteriores pueden mantener %LOCALAPPDATA%/LoboServerPanel/data. Desinstalar conserva los datos. Guarda una copia independiente en otro disco.
+Los datos se guardan en %LOCALAPPDATA%/WolfMCPanel/data. Desinstalar conserva los datos. Guarda una copia independiente en otro disco.
 
 Actualizar Minecraft hace una copia previa, pero no garantiza que los mods admitan el cambio ni recupera contenido de mods eliminados. No uses tu único mundo para probar una migración y no supongas que podrás bajar de versión conservando los avances posteriores.
 

@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),{spa
 const dataDir=require('./paths.cjs').defaultDataDir();
 fs.mkdirSync(dataDir,{recursive:true});
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
-async function running(){try{const a=JSON.parse(fs.readFileSync(path.join(dataDir,'address.json'))),id=JSON.parse(fs.readFileSync(path.join(dataDir,'installation.json'))).id;if(!Number.isInteger(a.port)||a.port<1024||a.port>65535)return null;const r=await fetch('http://127.0.0.1:'+a.port+'/api/app/health',{signal:AbortSignal.timeout(1500)}),d=await r.json();return ['Wolf MC Panel','Lobo Server Panel'].includes(d.product)&&d.instanceId===id?{...a,url:'http://127.0.0.1:'+a.port+'/'}:null;}catch{return null;}}
+async function running(){try{const a=JSON.parse(fs.readFileSync(path.join(dataDir,'address.json'))),id=JSON.parse(fs.readFileSync(path.join(dataDir,'installation.json'))).id;if(!Number.isInteger(a.port)||a.port<1024||a.port>65535)return null;const r=await fetch('http://127.0.0.1:'+a.port+'/api/app/health',{signal:AbortSignal.timeout(1500)}),d=await r.json();return d.product==='Wolf MC Panel'&&d.instanceId===id?{...a,url:'http://127.0.0.1:'+a.port+'/'}:null;}catch{return null;}}
 function open(file){const child=spawn('rundll32.exe',['url.dll,FileProtocolHandler',file],{detached:true,windowsHide:true,stdio:'ignore'});child.on('error',()=>{});child.unref();}
 (async()=>{
  let app=await running();

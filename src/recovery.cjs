@@ -11,7 +11,7 @@ async function stopOwnedPanel({dataDir,controlDir,fetcher=fetch}){
  const address=JSON.parse(regular(addressFile)),identity=JSON.parse(regular(path.join(dataDir,'installation.json')));
  if(!Number.isInteger(address.port)||address.port<1024||address.port>65535||address.instanceId!==identity.id)fail('No se pudo identificar el panel local. Cierra el panel y vuelve a intentarlo.');
  const url='http://127.0.0.1:'+address.port+'/';
- async function health(){try{const response=await fetcher(url+'api/app/health',{signal:AbortSignal.timeout(2000)});if(!response.ok)fail('El puerto local pertenece a otro servicio.');const data=await response.json();if(data.instanceId!==identity.id||!['Wolf MC Panel','Lobo Server Panel'].includes(data.product))fail('El puerto local pertenece a otra instalación.');return true;}catch(error){if(error.cause?.code==='ECONNREFUSED')return false;throw error;}}
+ async function health(){try{const response=await fetcher(url+'api/app/health',{signal:AbortSignal.timeout(2000)});if(!response.ok)fail('El puerto local pertenece a otro servicio.');const data=await response.json();if(data.instanceId!==identity.id||data.product!=='Wolf MC Panel')fail('El puerto local pertenece a otra instalación.');return true;}catch(error){if(error.cause?.code==='ECONNREFUSED')return false;throw error;}}
  if(!await health())return;
  const config=JSON.parse(regular(path.join(controlDir,'panel/panel-config.json')));
  const response=await fetcher(url+'api/app/local-shutdown',{method:'POST',headers:{Authorization:'Bearer '+config.panelToken},signal:AbortSignal.timeout(5000)});

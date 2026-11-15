@@ -21,7 +21,7 @@ try {
  & $node --test tests/*.test.cjs
  if($LASTEXITCODE -ne 0){throw 'Las pruebas fallaron.'}
  $csc=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
- & $csc /nologo /target:winexe /reference:System.Windows.Forms.dll (('/win32icon:')+(Join-Path $projectRoot 'assets/app-icon.ico')) (('/out:')+(Join-Path $projectRoot 'build/LoboServerPanel.exe')) (Join-Path $projectRoot 'installer/Launcher.cs')
+ & $csc /nologo /target:winexe /reference:System.Windows.Forms.dll (('/win32icon:')+(Join-Path $projectRoot 'assets/app-icon.ico')) (('/out:')+(Join-Path $projectRoot 'build/WolfMCPanel.exe')) (Join-Path $projectRoot 'installer/Launcher.cs')
  if($LASTEXITCODE -ne 0){throw 'No se pudo compilar el lanzador.'}
  & $compiler (Join-Path $projectRoot 'installer/windows.iss')
  if($LASTEXITCODE -ne 0){throw 'No se pudo compilar el instalador.'}

@@ -1,5 +1,9 @@
 # Release verification
 
+## 1.0.4
+
+80 automated checks pass, including canonical data-directory selection, explicit overrides and product-name consistency across the README and five translated guide catalogs. Installer validation uses WolfMCPanel.exe and checks obsolete-launcher cleanup while preserving passwords, preferences, recovery and server data. The creator’s separate personal Minecraft installation is not moved or renamed.
+
 ## 1.0.3
 
 77 automated checks pass. Eight recovery regression checks cover local confirmation, temporary-key rotation, old-password rejection, session revocation, preservation of world/RCON data, managed child keys, invalid paths/configuration, maintenance refusal and unexpected local services. Installer validation includes recovery of an isolated test installation. The creator’s personal login screen was updated without changing its existing password, hosting settings or Minecraft process. Screenshots use a separate demo profile.

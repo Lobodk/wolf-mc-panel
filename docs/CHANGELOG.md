@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.4 — 2026-11-15
+
+- Use Wolf MC Panel consistently in the launcher, installer shortcuts, documentation and all six guide languages. The launcher is WolfMCPanel.exe and the default data directory is %LOCALAPPDATA%/WolfMCPanel/data.
+- Remove the obsolete alternate data-folder description and automatic selection of an earlier test-build folder. Explicit data-directory overrides still work.
+- Clean up the obsolete launcher during installation updates without deleting user data.
+
 ## 1.0.3 — 2026-11-15
 
 - Add a Forgot password guide to the sign-in screen in six languages.
