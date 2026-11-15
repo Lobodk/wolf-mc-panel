@@ -1360,7 +1360,7 @@ function latestCompatibleCurseForgeFile(files) {
   return [...(releases.length ? releases : files)].sort((a, b) => Date.parse(b.fileDate || '') - Date.parse(a.fileDate || ''))[0] || null;
 }
 
-async function resolveRequiredCurseForgeDependencies(dependencies, installedMods, rootModId) {
+async function resolveRequiredCurseForgeDependencies(dependencies, installedMods, rootModId, selectedOptionalIds = new Set()) {
   const requiredRelations = new Set([1, 3]);
   const nodesById = new Map();
   const visiting = new Set();
@@ -1369,7 +1369,8 @@ async function resolveRequiredCurseForgeDependencies(dependencies, installedMods
   async function visit(dependency, depth = 1) {
     const modId = Number(dependency.modId);
     const relationType = Number(dependency.relationType);
-    if (!requiredRelations.has(relationType) || !Number.isSafeInteger(modId) || modId <= 0 || modId === rootModId || nodesById.has(modId)) return;
+    const selectedOptional = depth === 1 && relationType === 2 && selectedOptionalIds.has(modId);
+    if ((!requiredRelations.has(relationType) && !selectedOptional) || !Number.isSafeInteger(modId) || modId <= 0 || modId === rootModId || nodesById.has(modId)) return;
     if (depth > 8) throw new Error('Las dependencias de este mod superan el límite de profundidad admitido.');
     if (nodesById.size >= 24) throw new Error('Este mod declara demasiadas dependencias para instalarlas de una vez.');
     if (visiting.has(modId)) return;
@@ -1467,7 +1468,7 @@ async function runBulkModUpdates(id) {
   }
 }
 
-async function installCurseForgeSelection(modId, fileId, replaceName, progressId = '') {
+async function installCurseForgeSelection(modId, fileId, replaceName, progressId = '', requestedOptionalIds = []) {
   const checkpoint = modStaging.checkpoint();
   updateModOperationProgress(progressId, {
     phase: 'Buscando la versión y sus dependencias', percent: 1, currentItem: 0,
@@ -1478,7 +1479,13 @@ async function installCurseForgeSelection(modId, fileId, replaceName, progressId
   if (!selected) throw new Error('El archivo ya no aparece como compatible con Minecraft '+CURSEFORGE_MC_VERSION+' y el loader de este servidor.');
 
   updateModOperationProgress(progressId, { phase: 'Comprobando dependencias', percent: 3 });
-  const dependencyPlan = await resolveRequiredCurseForgeDependencies(selected.dependencies || [], await installedModsWithPending(), modId);
+  const declaredOptionalIds = new Set((selected.dependencies || [])
+    .filter(dependency => Number(dependency.relationType) === 2)
+    .map(dependency => Number(dependency.modId))
+    .filter(id => Number.isSafeInteger(id) && id > 0));
+  const selectedOptionalIds = new Set(requestedOptionalIds.map(Number));
+  if ([...selectedOptionalIds].some(id => !declaredOptionalIds.has(id))) throw new Error('La lista de dependencias opcionales ya no coincide con la versión seleccionada. Vuelve a abrir sus versiones compatibles.');
+  const dependencyPlan = await resolveRequiredCurseForgeDependencies(selected.dependencies || [], await installedModsWithPending(), modId, selectedOptionalIds);
   const dependencyFileNames = new Map();
   for (const dependency of dependencyPlan) {
     let installedFileName = dependency.installedFileName;
@@ -2192,8 +2199,12 @@ async function handleApi(req, res, url) {
     const modId = Number(data.modId);
     const fileId = Number(data.fileId);
     const progressId = typeof data.progressId === 'string' ? data.progressId : '';
+    const optionalDependencyIds = data.optionalDependencyIds === undefined ? [] : data.optionalDependencyIds;
     if (!Number.isSafeInteger(modId) || modId <= 0 || !Number.isSafeInteger(fileId) || fileId <= 0) {
       return sendJson(res, 400, { error: 'El mod o archivo de CurseForge no es válido.' });
+    }
+    if (!Array.isArray(optionalDependencyIds) || optionalDependencyIds.length > 100 || optionalDependencyIds.some(id => !Number.isSafeInteger(Number(id)) || Number(id) <= 0)) {
+      return sendJson(res, 400, { error: 'La selección de dependencias opcionales no es válida.' });
     }
     if (progressId && !validProgressId(progressId)) return sendJson(res, 400, { error: 'Identificador de progreso no válido.' });
     maintenanceLock = 'curseforge';
@@ -2202,7 +2213,7 @@ async function handleApi(req, res, url) {
       totalItems: 0, downloadedBytes: 0, totalBytes: 0, done: false,
     });
     try {
-      const result = await installCurseForgeSelection(modId, fileId, data.replaceName || '', progressId);
+      const result = await installCurseForgeSelection(modId, fileId, data.replaceName || '', progressId, optionalDependencyIds);
       const previous = readModOperationProgress(progressId) || {};
       const totalBytes = Number(previous.totalBytes) || result.bytes;
       updateModOperationProgress(progressId, {

@@ -1019,8 +1019,10 @@ function renderCurseForgeResult(mod) {
       install.textContent = 'Instalar';
       const updateInstallLabel = () => {
         const action = replaceSelect.value ? 'Actualizar' : 'Instalar';
-        const missing = dependencyOverview.required.filter((dependency) => !dependency.installedFileName).length;
-        install.textContent = missing ? `${action} + ${missing} dependencia${missing === 1 ? '' : 's'}` : action;
+        const requiredMissing = dependencyOverview.required.filter((dependency) => !dependency.installedFileName).length;
+        const optionalSelected = [...dependencyPanel.querySelectorAll('.cf-dependency-row input:not(:disabled):checked')].length;
+        const total = requiredMissing + optionalSelected;
+        install.textContent = total ? `${action} + ${total} dependencia${total === 1 ? '' : 's'}` : action;
       };
       const renderDependencyOverview = () => {
         dependencyPanel.replaceChildren();
@@ -1031,12 +1033,15 @@ function renderCurseForgeResult(mod) {
           heading.textContent = title;
           dependencyPanel.append(heading);
           for (const dependency of dependencies) {
-            const row = document.createElement('div');
+            const row = document.createElement('label');
             row.className = 'cf-dependency-row';
             const marker = document.createElement('input');
             marker.type = 'checkbox';
-            marker.checked = required ? true : false;
-            marker.disabled = true;
+            marker.checked = required || Boolean(dependency.installedFileName);
+            marker.disabled = required || Boolean(dependency.installedFileName);
+            row.classList.toggle('is-locked', marker.disabled);
+            marker.dataset.modId = String(dependency.modId);
+            marker.setAttribute('aria-label', `${required ? 'Dependencia necesaria' : 'Instalar dependencia opcional'}: ${dependency.name}`);
             const copy = document.createElement('span');
             copy.className = 'cf-dependency-copy';
             const name = document.createElement('strong');
@@ -1045,6 +1050,10 @@ function renderCurseForgeResult(mod) {
             detail.textContent = required
               ? (dependency.installedFileName ? `Ya instalada: ${dependency.installedFileName}` : 'Se instalará también con este mod')
               : (dependency.installedFileName ? `Opcional · ya instalada: ${dependency.installedFileName}` : 'Opcional · no se instalará automáticamente');
+            if (!required && !marker.disabled) marker.addEventListener('change', () => {
+              detail.textContent = marker.checked ? 'Opcional · se instalará con este mod' : 'Opcional · no se instalará automáticamente';
+              updateInstallLabel();
+            });
             copy.append(name, detail);
             if (dependency.logo) {
               const image = document.createElement('img');
@@ -1111,12 +1120,18 @@ function renderCurseForgeResult(mod) {
         const selectedFile = fileSelect.value;
         const action = replaceName ? 'reemplazar ' + replaceName : 'instalar ' + mod.name;
         const dependenciesToInstall = dependencyOverview.required.filter((dependency) => !dependency.installedFileName);
+        const optionalDependencyIds = [...dependencyPanel.querySelectorAll('.cf-dependency-row input:not(:disabled):checked')]
+          .map((input) => Number(input.dataset.modId)).filter((id) => Number.isSafeInteger(id) && id > 0);
+        const selectedOptional = dependencyOverview.optional.filter((dependency) => optionalDependencyIds.includes(Number(dependency.modId)) && !dependency.installedFileName);
         const dependenciesNotice = dependenciesToInstall.length
           ? ` También se instalarán las dependencias necesarias: ${dependenciesToInstall.map((dependency) => dependency.name).join(', ')} y las dependencias obligatorias de esas bibliotecas, si las hubiera.`
           : '';
+        const optionalNotice = selectedOptional.length
+          ? ` También se instalarán las dependencias opcionales seleccionadas: ${selectedOptional.map((dependency) => dependency.name).join(', ')} y sus dependencias obligatorias, si las hubiera.`
+          : '';
         const installNotice = replaceName
-          ? `¿Quieres ${action} con ${fileSelect.selectedOptions[0]?.textContent}?${dependenciesNotice} Se preparará con el servidor encendido y se aplicará al reiniciar.`
-          : `¿Quieres ${action} con ${fileSelect.selectedOptions[0]?.textContent}?${dependenciesNotice} Se añadirá ahora y quedará listo al reiniciar el servidor; Los mods se activan al arrancar Minecraft.`;
+          ? `¿Quieres ${action} con ${fileSelect.selectedOptions[0]?.textContent}?${dependenciesNotice}${optionalNotice} Se preparará con el servidor encendido y se aplicará al reiniciar.`
+          : `¿Quieres ${action} con ${fileSelect.selectedOptions[0]?.textContent}?${dependenciesNotice}${optionalNotice} Se añadirá ahora y quedará listo al reiniciar el servidor; Los mods se activan al arrancar Minecraft.`;
         if (!window.confirm(installNotice)) return;
         install.disabled = true;
         install.textContent = 'Descargando e instalando…';
@@ -1127,7 +1142,7 @@ function renderCurseForgeResult(mod) {
         try {
           const result = await api('/api/curseforge/install', {
             method: 'POST',
-            body: JSON.stringify({ modId: mod.id, fileId: Number(selectedFile), replaceName, progressId }),
+            body: JSON.stringify({ modId: mod.id, fileId: Number(selectedFile), replaceName, progressId, optionalDependencyIds }),
           });
           rememberCurseForgeMetadata(result.name, mod);
           const addedDependencies = (result.installedDependencies || []).filter((dependency) => !dependency.installed);
