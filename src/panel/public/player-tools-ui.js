@@ -35,7 +35,7 @@
    const total=Number(data.total)||0;
    let text=data.available===false?(data.message||'El catálogo todavía no está disponible. Reinicia el servidor para generarlo.')
     :showResults?(total?`${total.toLocaleString('es-ES')} coincidencia(s)${total>matches.length?' · mostrando '+matches.length+'; concreta la búsqueda':''}.`:'No hay objetos con ese nombre. Prueba otra palabra o el nombre del mod.')
-    :'Busca por nombre en español, nombre del mod o identificador.';
+    :'Busca por nombre, encantamiento, mod o identificador.';
    if(data.pendingRestart)text+=' Hay cambios de mods pendientes: el catálogo se renovará cuando reinicies Minecraft.';
    if(data.available!==false&&data.message&&!data.pendingRestart)text+=' '+data.message;
    status.textContent=text;
@@ -45,7 +45,8 @@
    clearTimeout(debounce);controller?.abort();controller=new AbortController();const version=++requestVersion;const query=input.value.trim();
    if(showResults)status.textContent='Buscando objetos del servidor…';
    try{
-    const data=await request('/api/items?q='+encodeURIComponent(query)+'&limit=40',{signal:controller.signal});
+    const language=window.WolfI18n?.getLanguage?.()||document.documentElement.lang||'es';
+    const data=await request('/api/items?q='+encodeURIComponent(query)+'&limit=40&language='+encodeURIComponent(language),{signal:controller.signal});
     if(version!==requestVersion)return;
     matches=(data.items||[]).filter(validItem);describe(data,showResults);
     if(showResults)render();else close();
@@ -68,6 +69,7 @@
    if(e.key==='Enter'&&!list.hidden&&matches.length){e.preventDefault();choose(highlight>=0?highlight:0);}
   });
   document.addEventListener('pointerdown',e=>{if(!picker.contains(e.target))close();});
+  window.addEventListener('panel-language',()=>{invalidate();matches=[];close();search(focused);});
   return {selectedItem,refresh(){return search(focused);},close};
  }
  const itemPicker=createItemPicker({input:el('toolsItem'),list:el('toolsItemResults'),status:el('toolsItemCatalogStatus'),selection:el('toolsItemSelection'),hidden:el('toolsItemId'),picker:el('toolsItemPicker'),request:api,onChange:item=>{el('toolsGiveButton').disabled=busy||!item;}});
@@ -139,7 +141,7 @@
   if(!window.confirm('¿Entregar '+ids.length+' lápida(s) con sus objetos a '+selected()+'? No recuperes también los objetos de las originales.'))return;
   perform('/api/player-tools/restore',{name:selected(),ids,quiet:el('toolsQuiet').checked});
  });
- el('toolsGiveForm').addEventListener('submit',e=>{e.preventDefault();const item=itemPicker.selectedItem();if(!item){result('Busca y selecciona un objeto de la lista antes de entregarlo.',true);el('toolsItem').focus();return;}action('give',{item:item.id,amount:Number(el('toolsItemAmount').value)});});
+ el('toolsGiveForm').addEventListener('submit',e=>{e.preventDefault();const item=itemPicker.selectedItem();if(!item){result('Busca y selecciona un objeto de la lista antes de entregarlo.',true);el('toolsItem').focus();return;}action('give',{item:item.id,variant:item.variant||'',amount:Number(el('toolsItemAmount').value)});});
  el('toolsXpForm').addEventListener('submit',e=>{e.preventDefault();action('xp-add',{amount:Number(el('toolsXp').value)});});
  el('toolsXpSet').addEventListener('click',()=>{const amount=Number(el('toolsXp').value);if(window.confirm('¿Fijar el total de '+selected()+' en '+amount+' niveles?'))action('xp-set',{amount});});
  el('toolsModeForm').addEventListener('submit',e=>{e.preventDefault();action('gamemode',{mode:el('toolsMode').value});});

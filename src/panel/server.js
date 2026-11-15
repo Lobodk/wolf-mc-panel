@@ -2533,6 +2533,7 @@ const playerTools = createPlayerTools({
   canMutate: () => !maintenanceLock && !options.externalBusy?.(),
   canRestore: () => !backupRunning && backupQueued === 0,
   validateItemId: id => itemCatalog.hasItem(id),
+  resolveItemArgument: (id, variant) => itemCatalog.giveArgument(id, variant),
   features: () => { if(options.record && !options.record.legacy)return {graves:false,horror:false};const names=fs.readdirSync(MODS_DIR);return {graves:names.some(n=>/^gravestone.*\.jar$/i.test(n)),horror:names.some(n=>/^serversidehorror.*\.jar$/i.test(n))}; },
   modernCommands: !options.record || /^26\./.test(CURSEFORGE_MC_VERSION),
 });

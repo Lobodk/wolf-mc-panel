@@ -5,6 +5,9 @@
 - Distinguish smithing templates by their translated upgrade or armor trim, banner patterns by their design, and music discs by their track.
 - Automatically qualify duplicate item names from installed mods without hiding registry entries; searches include both the original label and the distinguishing detail.
 - Rebuild these labels when the server item registry or mod languages change. No Minecraft restart is required for this panel-only fix.
+- Search and select enchanted books by enchantment and level, including Protection IV, Unbreaking III and Mending. Give commands carry the selected stored enchantment and reject unrecognized variants.
+- Match item, enchantment and variant names to the selected panel language: Spanish, English, German, French, Turkish or Brazilian Portuguese, with available-name fallback for untranslated mods.
+- Fix exact numeric/Roman level matching and keep book variants separate from base registry items.
 
 ## 1.0.1 — 2026-11-14
 

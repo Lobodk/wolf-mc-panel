@@ -2,7 +2,7 @@
 
 ## 1.0.2
 
-67 automated checks pass, including translated tooltip variants, duplicate labels across mods, colliding mod display names, registry refresh, stable ordering and identifier lookup. A real 5,787-item server catalog retained every entry and went from 93 duplicate-name groups to zero. Installer lifecycle validation and SHA-256 receipts are attached to the release. No Minecraft world lifecycle test was repeated for this naming-only change.
+69 automated checks pass, including translated tooltip variants, duplicate labels across mods, colliding mod display names, registry refresh, stable ordering and identifier lookup. A real 5,787-item server catalog retained every entry and went from 93 duplicate-name groups to zero. Installer lifecycle validation and SHA-256 receipts are attached to the release. The book update was also verified against the private live server: 128 generated book variants, six language searches, exact level matching, and a valid Protection IV give-command parse using a non-matching player selector (no items delivered). The owner confirmed the panel worked before publication. Resource definitions provide enchantments on older snapshots; an exported live enchantment registry takes precedence when present. These checks do not establish compatibility with every custom datapack. No Minecraft world lifecycle test was repeated for this panel change.
 
 ## 1.0.1
 

@@ -12,9 +12,9 @@ function fail(message,status=400){const error=new Error(message);error.status=st
 function integer(value,min,max,label){const n=Number(value);if(!Number.isInteger(n)||n<min||n>max)fail(`${label}: usa un número entero entre ${min} y ${max}.`);return n;}
 const SOUND_IDS={explosion:'minecraft:entity.generic.explode',ghast:'minecraft:entity.ghast.scream',creeper:'minecraft:entity.creeper.primed',cave:'minecraft:ambient.cave'};
 const ACTIONS=new Set(['give','xp-add','xp-set','heal','feed','kill','gamemode','teleport-player','teleport-position','teleport-death','jumpscare','herobrine','sound']);
-function actionCommand(data,name,death){
+function actionCommand(data,name,death,itemArgument){
  switch(data.action){
-  case 'give':{if(typeof data.item!=='string'||!/^[a-z0-9_.-]+:[a-z0-9_./-]+$/.test(data.item)||data.item.length>160)fail('Usa un identificador como minecraft:creeper_spawn_egg.');return `give ${name} ${data.item} ${integer(data.amount,1,64,'Cantidad')}`;}
+  case 'give':{if(typeof data.item!=='string'||!/^[a-z0-9_.-]+:[a-z0-9_./-]+$/.test(data.item)||data.item.length>160)fail('Usa un identificador como minecraft:creeper_spawn_egg.');return `give ${name} ${itemArgument||data.item} ${integer(data.amount,1,64,'Cantidad')}`;}
   case 'xp-add':case 'xp-set':return `experience ${data.action==='xp-add'?'add':'set'} ${name} ${integer(data.amount,0,10000,'Niveles')} levels`;
   case 'heal':return `effect give ${name} minecraft:instant_health 1 10 true`;
   case 'feed':return `effect give ${name} minecraft:saturation 1 5 true`;
@@ -34,7 +34,7 @@ function actionCommand(data,name,death){
   default:fail('Acción no válida.');
  }
 }
-function createPlayerTools({serverDir,rcon,onlineNames,canMutate=()=>true,canRestore=()=>true,graveReader=null,validateItemId=async()=>true,features=()=>({graves:true,horror:true}),modernCommands=true}){
+function createPlayerTools({serverDir,rcon,onlineNames,canMutate=()=>true,canRestore=()=>true,graveReader=null,validateItemId=async()=>true,resolveItemArgument=null,features=()=>({graves:true,horror:true}),modernCommands=true}){
  const stateFile=path.join(serverDir,'panel/player-tools-state.json');
  let state={history:[],jobs:[],graves:{},quietLease:false};
  if(fs.existsSync(stateFile)){const saved=JSON.parse(fs.readFileSync(stateFile,'utf8'));state={...state,...saved};}
@@ -101,8 +101,14 @@ function createPlayerTools({serverDir,rcon,onlineNames,canMutate=()=>true,canRes
   const p=await player(data.name);
   const death=data.action==='teleport-death'?(await deaths(p.name)).find(d=>d.id===data.deathId):null;
   if(data.action==='teleport-death'&&!death)fail('No se encuentra esa muerte del jugador.',404);
-  const command=actionCommand(data,p.name,death);
   if(data.action==='give'&&!await validateItemId(data.item))fail('Ese objeto no figura en el catálogo cargado por el servidor. Actualiza la búsqueda y selecciona un resultado válido.',409);
+  let itemArgument;
+  if(data.action==='give'){
+   if(data.variant!==undefined&&(typeof data.variant!=='string'||data.variant.length>220))fail('Variante de objeto inválida.');
+   if(data.variant&&!resolveItemArgument)fail('Este catálogo aún no admite variantes de objetos.',409);
+   if(resolveItemArgument)try{itemArgument=await resolveItemArgument(data.item,data.variant||'');}catch{fail('La variante seleccionada no está disponible. Actualiza la búsqueda.',409);}
+  }
+  const command=actionCommand(data,p.name,death,itemArgument);
   if(['herobrine','jumpscare'].includes(data.action)&&!fs.readdirSync(path.join(serverDir,'mods')).some(n=>/^serversidehorror.*\.jar$/i.test(n)))fail('El mod de terror no está instalado.');
   if(!p.online){
    if(data.waitForJoin===true&&['sound','jumpscare','herobrine'].includes(data.action)){

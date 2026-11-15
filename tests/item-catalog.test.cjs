@@ -27,9 +27,9 @@ async function fixture(run) {
   const file = path.join(telemetry, 'items.json');
   const save = data => { fs.writeFileSync(file + '.tmp', JSON.stringify(data)); fs.renameSync(file + '.tmp', file); };
   save(snapshot());
-  const make = () => createItemCatalog({ serverDir: dir, checkIntervalMs: 0, now: () => currentTime,
+  const make = (options = {}) => createItemCatalog({ serverDir: dir, checkIntervalMs: 0, now: () => currentTime,
     languageLoader: async () => { calls.jar++; return translations; },
-    vanillaLoader: async () => { calls.vanilla++; return { es_es: { 'item.minecraft.creeper_spawn_egg': 'Generar creeper', 'item.minecraft.villager_spawn_egg': 'Generar aldeano', 'item.minecraft.diamond': 'Diamante' } }; } });
+    vanillaLoader: async () => { calls.vanilla++; return { es_es: { 'item.minecraft.creeper_spawn_egg': 'Generar creeper', 'item.minecraft.villager_spawn_egg': 'Generar aldeano', 'item.minecraft.diamond': 'Diamante' } }; }, ...options });
   try { await run({ dir, mods, jar, file, make, calls, translations, snapshot, save, advance: () => { currentTime += 5000; } }); }
   finally { fs.rmSync(dir, { recursive: true, force: true }); }
 }
@@ -146,6 +146,42 @@ test('Search limits and backend validation bound the result; endpoint does not r
   assert.equal(reply.status, 200); assert.equal(reply.body.items.length, 1); assert.equal(reply.body.total, 2);
   assert.equal(JSON.stringify(reply).includes('lobodk-item-catalog-'), false);
   assert.equal(await catalog.handle({ method: 'POST' }, {}, new URL('http://localhost/api/items'), { sendJson }), false);
+}));
+
+test('Enchanted books are localized in six languages, match exact levels and produce only catalog-approved components', async () => fixture(async ({ make, save, snapshot, translations }) => {
+  const fresh = snapshot(); fresh.items.push({ id: 'minecraft:enchanted_book', translationKey: 'item.minecraft.enchanted_book', fallbackName: 'Enchanted Book' }); save(fresh);
+  const names = { es_es: ['Libro encantado','Protección'], en_us: ['Enchanted Book','Protection'], de_de: ['Verzaubertes Buch','Schutz'], fr_fr: ['Livre enchanté','Protection'], tr_tr: ['Büyülü Kitap','Koruma'], pt_br: ['Livro Encantado','Proteção'] };
+  for (const [locale, [book, protection]] of Object.entries(names)) translations[locale] = { ...translations[locale], 'item.minecraft.enchanted_book': book, 'enchantment.minecraft.protection': protection };
+  const resourceLoader = async () => ({ enchantments: [{id:'minecraft:protection',maxLevel:4}], english: {} });
+  const catalog = make({ resourceLoader });
+  for (const [language, locale] of Object.entries({es:'es_es',en:'en_us',de:'de_de',fr:'fr_fr',tr:'tr_tr',pt:'pt_br'})) {
+    const result = await catalog.search({language,q:names[locale][1]+' IV'});
+    assert.equal(result.total,1); assert.equal(result.items[0].name,names[locale][0]+' — '+names[locale][1]+' IV');
+    assert.equal(result.items[0].variant,'minecraft:protection@4');
+    assert.equal((await catalog.search({language,q:names[locale][1]+' 4'})).total,1);
+  }
+  assert.equal((await catalog.search({language:'__proto__',q:'Protección IV'})).total,1);
+  assert.equal(await catalog.giveArgument('minecraft:enchanted_book','minecraft:protection@4'),'minecraft:enchanted_book[minecraft:stored_enchantments={"minecraft:protection":4}]');
+  for(const variant of ['minecraft:protection@5','minecraft:unknown@4','minecraft:protection@4]\nkill @a'])await assert.rejects(catalog.giveArgument('minecraft:enchanted_book',variant));
+  await assert.rejects(catalog.giveArgument('minecraft:diamond','minecraft:protection@4'));
+  assert.match(await make({resourceLoader,minecraftVersion:'1.21.1'}).giveArgument('minecraft:enchanted_book','minecraft:protection@4'),/stored_enchantments=\{levels:/);
+  assert.match(await make({resourceLoader,minecraftVersion:'1.20.4'}).giveArgument('minecraft:enchanted_book','minecraft:protection@4'),/StoredEnchantments:\[\{id:"minecraft:protection",lvl:4s\}\]/);
+}));
+
+test('Book definitions come from server resources and loaded mods; a live registry overrides resource guesses', async () => fixture(async ({ dir, mods, snapshot }) => {
+  const {createResourceLoader}=require('../src/panel/item-resources');
+  const {readZipEntries}=require('../src/panel/item-catalog');
+  const library=path.join(dir,'libraries/server-26.3.jar');fs.mkdirSync(path.dirname(library),{recursive:true});
+  fs.writeFileSync(library,zip([['assets/minecraft/lang/en_us.json','{"enchantment.minecraft.protection":"Protection"}'],['data/minecraft/enchantment/protection.json','{"max_level":4}']]));
+  const mod=path.join(mods,'example.jar');fs.writeFileSync(mod,zip([['data/example/enchantment/focus.json','{"max_level":3,"description":{"translate":"enchantment.example.focus"}}']]));
+  const pending=path.join(mods,'pending.jar');fs.writeFileSync(pending,zip([['data/example/enchantment/pending.json','{"max_level":5}']]));
+  const load=createResourceLoader(readZipEntries),fresh=snapshot();fresh.modFiles=fresh.modFiles.filter(f=>f.name!=='pending.jar');
+  const jars=[{name:'example.jar',file:mod},{name:'pending.jar',file:pending}];
+  const data=await load({serverDir:dir,jars,snapshot:fresh});
+  assert.deepEqual(data.enchantments.map(e=>e.id).sort(),['example:focus','minecraft:protection']);
+  assert.equal(data.english['enchantment.minecraft.protection'],'Protection');
+  fresh.enchantments=[];
+  assert.deepEqual((await load({serverDir:dir,jars,snapshot:fresh})).enchantments,[]);
 }));
 
 function zip(entries) {

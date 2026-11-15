@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="/edition.css?v=1.0.1">
   <script src="/app.js" defer></script>
   <script src="/network-ui.js" defer></script>
-  <script src="/player-tools-ui.js" defer></script>
+  <script src="/player-tools-ui.js?v=item-books-2" defer></script>
   <script src="/manager-ui.js" defer></script>
   <script src="/motd-model.js" defer></script>
   <script src="/motd-editor.js" defer></script>
@@ -379,7 +379,7 @@
                   <input id="toolsItemId" type="hidden">
                   <div id="toolsItemResults" class="tools-item-results" role="listbox" aria-label="Objetos disponibles en el servidor" hidden></div>
                 </div>
-                <p id="toolsItemCatalogStatus" class="hint tools-item-catalog-status" role="status" aria-live="polite">Busca por nombre en español, nombre del mod o identificador.</p>
+                <p id="toolsItemCatalogStatus" class="hint tools-item-catalog-status" role="status" aria-live="polite">Busca por nombre, encantamiento, mod o identificador.</p>
                 <p id="toolsItemSelection" class="tools-item-selection" aria-live="polite">Selecciona un objeto de los resultados.</p>
                 <div class="tools-inline"><label for="toolsItemAmount">Cantidad<input id="toolsItemAmount" type="number" min="1" max="64" value="1" required></label><button id="toolsGiveButton" class="button primary" type="submit" disabled>Dar objeto</button></div>
                 <p class="hint">El catálogo incluye los objetos cargados por el servidor. Los mods nuevos aparecen después de reiniciarlo. Deja espacio en el inventario.</p>
