@@ -2498,6 +2498,7 @@ function staticFile(res, pathname, req) {
     '/i18n.css': ['i18n.css', 'text/css; charset=utf-8'],
     '/locales.json': ['locales.json', 'application/json; charset=utf-8'],
     '/hosting-ui.js': ['hosting-ui.js', 'text/javascript; charset=utf-8'],
+    '/recovery-ui.js': ['recovery-ui.js', 'text/javascript; charset=utf-8'],
     '/welcome-ui.js': ['welcome-ui.js', 'text/javascript; charset=utf-8'],
     '/help-ui.js': ['help-ui.js', 'text/javascript; charset=utf-8'],
     '/edition-ui.js': ['edition-ui.js', 'text/javascript; charset=utf-8'],

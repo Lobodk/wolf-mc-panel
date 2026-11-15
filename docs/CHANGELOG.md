@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.3 — 2026-11-15
+
+- Add a Forgot password guide to the sign-in screen in six languages.
+- Add a locally confirmed Windows password-reset shortcut and a source-distribution recovery script. Recovery stops only the panel, revokes sessions, rotates temporary keys for all managed servers and temporarily restricts panel access to loopback.
+- Preserve a backup of previous access settings and keep Minecraft processes, worlds, mods, RCON passwords and server data unchanged. Busy maintenance blocks recovery.
+- Expand the English and Spanish README galleries with item/book search, settings, player access and built-in help screenshots using demonstration data.
+
 ## 1.0.2 — 2026-11-15
 
 - Distinguish smithing templates by their translated upgrade or armor trim, banner patterns by their design, and music discs by their track.

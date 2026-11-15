@@ -38,3 +38,12 @@ Use the Windows Start-menu shortcut Recover local access, or run the desktop lau
 If you forget your password, stop the panel, back up auth.json in its data directory and rename it to auth.json.old. Restart locally to regenerate the initial-access instructions, sign in and set a new password. Treat access to the data folder as administrator-level access to this application.
 
 Keep both program and data backups before moving machines. Copying program files alone does not copy your worlds. This release does not provide remote worker agents or support Linux/Docker deployment.
+
+
+## Forgotten password
+
+On the Windows PC that hosts the panel, choose **Start → Wolf MC Panel → Restablecer contraseña** and confirm the local Windows prompt. The browser’s **I forgot my password** button explains these steps; it cannot reset access remotely. Source users can run `scripts/recuperar-contrasena.ps1` in PowerShell. The personal installation has a separate Windows recovery shortcut.
+
+The tool refuses to interrupt active panel maintenance. It closes the panel and its sessions, saves previous access settings under `recovery-backups`, rotates the temporary key in the main and managed-server configurations, and switches web access to this PC only. Minecraft processes, worlds, mods and RCON passwords remain unchanged. A new local access-key file opens. Use it to sign in and set a personal password, then explicitly re-enable LAN or HTTPS if needed. Existing router forwarding rules are not changed.
+
+Anyone who controls the server’s Windows account can already read or modify its files; protect that account and its backups. Do not share temporary keys or recovery backups. Recovery is not an email service and does not expose an unauthenticated reset API.

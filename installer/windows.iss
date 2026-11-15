@@ -1,4 +1,4 @@
-#define ProductVersion "1.0.2"
+#define ProductVersion "1.0.3"
 [Setup]
 AppId={{B1E3D826-BCC8-42C1-9982-E455A9F90974}
 AppName=Wolf MC Panel
@@ -52,6 +52,7 @@ Source: "..\THIRD-PARTY-NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 Name: "{group}\Wolf MC Panel"; Filename: "{app}\LoboServerPanel.exe"
 Name: "{group}\Detener panel"; Filename: "{app}\LoboServerPanel.exe"; Parameters: "--stop"
 Name: "{group}\Recuperar acceso local"; Filename: "{app}\LoboServerPanel.exe"; Parameters: "--local"
+Name: "{group}\Restablecer contraseña"; Filename: "{app}\LoboServerPanel.exe"; Parameters: "--reset-password"
 Name: "{group}\Desinstalar"; Filename: "{uninstallexe}"
 Name: "{userdesktop}\Wolf MC Panel"; Filename: "{app}\LoboServerPanel.exe"; Tasks: desktopicon
 [Run]

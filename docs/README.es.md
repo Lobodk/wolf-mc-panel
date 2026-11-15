@@ -6,6 +6,42 @@ Un panel gratuito y de código abierto para crear y administrar servidores de Mi
 
 ![Resumen de un servidor de demostración](../assets/screenshots/overview.jpg)
 
+## Así es el panel
+
+Capturas con datos de demostración. Las pantallas pueden verse en español o inglés; el panel dispone de seis idiomas. El estado del servidor y las acciones disponibles dependen de cada instalación.
+
+### Servidores y creación paso a paso
+
+![Lista de servidores](../assets/screenshots/servers-en.jpg)
+
+![Asistente para crear un servidor](../assets/screenshots/create-server.jpg)
+
+### Apariencia y configuración
+
+![Editor visual del nombre y descripción](../assets/screenshots/appearance.jpg)
+
+![Dificultad, memoria, modo de juego y whitelist](../assets/screenshots/configuration.jpg)
+
+### Jugadores y buscador de objetos
+
+![Gestión de permisos y whitelist con jugadores de demostración](../assets/screenshots/player-access.jpg)
+
+![Libros encantados: búsqueda de Protección IV y sus variantes](../assets/screenshots/enchanted-books.jpg)
+
+### Rendimiento y ayuda integrada
+
+![Supervisión del rendimiento](../assets/screenshots/performance.jpg)
+
+![Guía de instalación, conexión y mods](../assets/screenshots/guide.jpg)
+
+![Recorrido de primeros pasos](../assets/screenshots/first-steps.jpg)
+
+### Recuperación local de contraseña
+
+![Ayuda para recuperar el acceso desde el PC del servidor](../assets/screenshots/password-recovery.jpg)
+
+Si olvidas la contraseña, pulsa **He olvidado mi contraseña**. En el PC del servidor, abre **Inicio → Wolf MC Panel → Restablecer contraseña** y confirma la operación. Obtendrás una clave temporal nueva; el acceso quedará limitado a ese PC hasta crear otra contraseña y volver a activar LAN o HTTPS. Los servidores y mundos se conservan.
+
 ## Primeros pasos
 
 1. Descarga el instalador oficial de Releases y comprueba su SHA-256 con el archivo de sumas de la misma publicación.

@@ -12,6 +12,12 @@ function open(file){const child=spawn('rundll32.exe',['url.dll,FileProtocolHandl
   const r=await fetch(app.url+'api/app/local-shutdown',{method:'POST',headers:{Authorization:'Bearer '+cfg.panelToken}});if(!r.ok)throw Error((await r.json()).error);for(let i=0;i<40&&await running();i++)await delay(250);
  }
  if(process.argv.includes('--stop')){await stopApp();return;}
+ if(process.argv.includes('--reset-password')){
+  if(!process.argv.includes('--confirm-local-reset'))throw Error('Utiliza Restablecer contraseña desde el menú Inicio y confirma la operación en este equipo.');
+  const recovery=require('./recovery.cjs'),controlDir=path.join(dataDir,'control');
+  await recovery.stopOwnedPanel({dataDir,controlDir});
+  recovery.resetLocalPassword({dataDir,controlDir,confirmed:true});app=null;
+ }
  if(process.argv.includes('--local')){await stopApp();fs.writeFileSync(path.join(dataDir,'hosting.json'),JSON.stringify({mode:'local',lanNames:[]}));app=null;}
  if(!app){
   const stdout=fs.openSync(path.join(dataDir,'app.log'),'a'),stderr=fs.openSync(path.join(dataDir,'errors.log'),'a');
@@ -22,4 +28,4 @@ function open(file){const child=spawn('rundll32.exe',['url.dll,FileProtocolHandl
   open(app.publicUrl||app.url);
   const marker=path.join(dataDir,'access-shown');if(!fs.existsSync(marker)){open(path.join(dataDir,'ACCESS-KEY.txt'));fs.writeFileSync(marker,'The access file was opened on first launch.');}
  }
-})().catch(error=>{fs.appendFileSync(path.join(dataDir,'errors.log'),new Date().toISOString()+' '+error.message+'\n');process.exitCode=1;});
+})().catch(error=>{const file=path.join(dataDir,'errors.log');fs.appendFileSync(file,new Date().toISOString()+' '+error.message+'\n');if(process.argv.includes('--reset-password')&&!process.argv.includes('--no-browser'))open(file);process.exitCode=1;});

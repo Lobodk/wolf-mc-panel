@@ -20,16 +20,50 @@ A free, open-source Minecraft Java server manager for **Windows x64**. Create lo
 - **Use your preferred language.** Spanish is the default; English, German, French, Turkish and Brazilian Portuguese are selectable in the panel and built-in guide. Game logs and third-party mod descriptions retain their original language. Translation improvements are welcome.
 - **Choose how to host.** Local-only by default; optional access over your LAN or your own HTTPS domain. The Windows installer bundles Node.js and Caddy. You can also run the source directly on Windows.
 
-<details>
-<summary>More screenshots</summary>
+## See the panel
+
+Screenshots use demonstration data. The interface is shown in Spanish or English; six languages are available. Server state and available actions depend on your installation.
+
+### Your servers and the creation wizard
+
+Keep independent servers together and choose Minecraft, a loader and connection settings step by step.
 
 ![Server home in English](assets/screenshots/servers-en.jpg)
+
 ![Create a Minecraft server](assets/screenshots/create-server.jpg)
+
+### Appearance and configuration
+
+Preview a server description with decorative text, colors and gradients, then adjust gameplay, memory and access settings.
+
 ![Visual server appearance editor](assets/screenshots/appearance.jpg)
+
+![Server configuration: difficulty, memory, game mode and whitelist](assets/screenshots/configuration.jpg)
+
+### Player access and searchable enchanted books
+
+Manage whitelist and operators, or find items and books by their translated names and enchantment levels.
+
+![Player access and whitelist management with demonstration players](assets/screenshots/player-access.jpg)
+
+![Searching for Protection IV enchanted books and variants](assets/screenshots/enchanted-books.jpg)
+
+### Performance and built-in help
+
+Review server performance and follow the setup guide, hosting explanations and FAQ. The first-run tour points new users to that help.
+
 ![Live performance](assets/screenshots/performance.jpg)
+
+![Built-in installation, hosting and mod guide](assets/screenshots/guide.jpg)
+
 ![First-run guided tour](assets/screenshots/first-steps.jpg)
 
-</details>
+### Local password recovery
+
+The sign-in screen explains recovery. The Windows shortcut requires a local confirmation and preserves your Minecraft servers and worlds.
+
+![Local password recovery guide](assets/screenshots/password-recovery.jpg)
+
 
 ## Install and get started
 
@@ -39,6 +73,8 @@ A free, open-source Minecraft Java server manager for **Windows x64**. Create lo
 4. Sign in with that initial key, then choose **Security and password** to set your own password. Its salted scrypt hash is stored on your PC; the initial key can no longer sign in afterward.
 5. Click **Create server**, choose a version and optional loader, set resources and connection details, then read and accept Minecraft's EULA if you agree. The panel downloads the required server files and Java.
 6. Open the prepared server and start it. Test locally before connecting friends from outside your network.
+
+If you forget your password, choose **I forgot my password** on the sign-in screen. On the server PC, run **Start → Wolf MC Panel → Restablecer contraseña**. Recovery creates a new temporary key, closes panel sessions and limits access to that PC until you set a password and re-enable LAN or HTTPS. It preserves Minecraft servers and worlds. [Recovery instructions](docs/HOSTING.md#forgotten-password).
 
 The guided first-run tour points you to the built-in guide and FAQ. You can repeat it later. The panel remembers that the tutorial has been shown and the guide has been opened, so dismissed hints do not return on later logins or in another browser. Opening the guide and returning to the panel preserves your signed-in session.
 
