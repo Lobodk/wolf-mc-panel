@@ -22,7 +22,7 @@ A free, open-source Minecraft Java server manager for **Windows x64**. Create lo
 
 ## See the panel
 
-Screenshots use demonstration data. The interface is shown in Spanish or English; six languages are available. Server state and available actions depend on your installation.
+Screenshots show Wolf MC Panel 1.0.8 with demonstration data. The interface is shown in Spanish or English; six languages are available. Server state and available actions depend on your installation.
 
 ### Your servers and the creation wizard
 
@@ -46,6 +46,8 @@ Manage whitelist and operators, or find items and books by their translated name
 
 ![Player access and whitelist management with demonstration players](assets/screenshots/player-access.jpg)
 
+![Player actions with item, health and teleport controls](assets/screenshots/player-actions.jpg)
+
 ![Searching for Protection IV enchanted books and variants](assets/screenshots/enchanted-books.jpg)
 
 ### Performance and built-in help
@@ -61,6 +63,8 @@ Review server performance and follow the setup guide, hosting explanations and F
 ### Local password recovery
 
 The sign-in screen explains recovery. The Windows shortcut requires a local confirmation and preserves your Minecraft servers and worlds.
+
+![Sign-in screen with a separate password recovery link](assets/screenshots/sign-in.jpg)
 
 ![Local password recovery guide](assets/screenshots/password-recovery.jpg)
 

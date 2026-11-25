@@ -8,11 +8,11 @@ Un panel gratuito y de código abierto para crear y administrar servidores de Mi
 
 ## Así es el panel
 
-Capturas con datos de demostración. Las pantallas pueden verse en español o inglés; el panel dispone de seis idiomas. El estado del servidor y las acciones disponibles dependen de cada instalación.
+Capturas de Wolf MC Panel 1.0.8 con datos de demostración. Las pantallas pueden verse en español o inglés; el panel dispone de seis idiomas. El estado del servidor y las acciones disponibles dependen de cada instalación.
 
 ### Servidores y creación paso a paso
 
-![Lista de servidores](../assets/screenshots/servers-en.jpg)
+![Lista de servidores](../assets/screenshots/servers.jpg)
 
 ![Asistente para crear un servidor](../assets/screenshots/create-server.jpg)
 
@@ -26,6 +26,8 @@ Capturas con datos de demostración. Las pantallas pueden verse en español o in
 
 ![Gestión de permisos y whitelist con jugadores de demostración](../assets/screenshots/player-access.jpg)
 
+![Acciones de jugadores con objetos, salud y teletransporte](../assets/screenshots/player-actions.jpg)
+
 ![Libros encantados: búsqueda de Protección IV y sus variantes](../assets/screenshots/enchanted-books.jpg)
 
 ### Rendimiento y ayuda integrada
@@ -37,6 +39,8 @@ Capturas con datos de demostración. Las pantallas pueden verse en español o in
 ![Recorrido de primeros pasos](../assets/screenshots/first-steps.jpg)
 
 ### Recuperación local de contraseña
+
+![Pantalla de inicio de sesión con un enlace separado para recuperar la contraseña](../assets/screenshots/sign-in.jpg)
 
 ![Ayuda para recuperar el acceso desde el PC del servidor](../assets/screenshots/password-recovery.jpg)
 
