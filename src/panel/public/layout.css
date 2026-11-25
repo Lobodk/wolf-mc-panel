@@ -5,20 +5,22 @@ body {background:radial-gradient(ellipse at 90% 0,#294c6638,transparent 58%),lin
 .topbar {background:#101c25f5;border-bottom-color:#365365;backdrop-filter:blur(16px)}
 .layout {grid-template-columns:260px minmax(0,1fr)}
 .content {padding:30px 32px 50px;max-width:1700px;margin:0 auto}
-.sidebar {height:calc(100vh - 72px);min-height:0;padding:22px 14px 0;background:linear-gradient(180deg,#101f2a,#0c1720);overflow-y:auto}
-.sidebar-scene {display:none}.sidebar-foot {margin-top:auto;padding:17px;font-size:12px}
-.side-label {font-size:11px;letter-spacing:1.7px;color:#8ba9ba;margin:4px 12px 17px}
-#homeSidebar {border:1px solid #345363;margin-bottom:20px;min-height:45px}
-.panel-navigation {padding-bottom:20px}
-.nav-search {display:flex;align-items:center;gap:9px;background:#08151e;border:1px solid #314e60;border-radius:9px;padding:10px;margin-bottom:20px}
+.sidebar {height:calc(100dvh - 72px);min-height:0;padding:14px 13px 0;background:linear-gradient(180deg,#101f2a,#0c1720);overflow:auto;scrollbar-gutter:stable}
+.sidebar > * {flex-shrink:0}
+.sidebar-foot {margin-top:auto;padding:14px 10px;font-size:12px}
+.side-label {padding:0;font-size:11px;letter-spacing:1.6px;color:#8ba9ba;margin:2px 10px 8px}
+#homeSidebar {border:1px solid #345363;margin:0 0 10px;min-height:40px}
+.panel-navigation {display:grid;gap:10px;padding-bottom:13px}
+.nav-search {display:flex;align-items:center;gap:9px;background:#08151e;border:1px solid #314e60;border-radius:8px;padding:8px 10px}
 .nav-search .icon {width:17px;height:17px;flex-basis:17px;color:#91adbc}
 .nav-search input {width:100%;min-width:0;border:0;background:none;color:#e2f2fb;font-size:14px;padding:0;outline:none}
 .nav-search:focus-within {border-color:var(--accent);box-shadow:0 0 0 2px #83c9ed20}
-.navigation-group {border:0!important;margin:9px 0 15px;background:none!important}
-.navigation-group>summary {padding:10px 10px;font:600 12px/1.4 var(--sans);letter-spacing:1.1px;text-transform:uppercase;color:#93adbd;cursor:pointer;list-style:none;display:flex;justify-content:space-between}
-.navigation-group>summary::after {content:'+';font-size:16px;color:#87afc3}.navigation-group[open]>summary::after{content:'−'}
-.navigation-group>div {padding-left:5px;border-left:1px solid #284251;margin-left:10px}
-.navigation-group .nav-button {width:100%;font-family:var(--sans);text-align:left;min-height:42px;padding:10px 12px;margin:3px 0;font-size:14px;gap:12px;border-radius:7px;line-height:1.4}
+.navigation-group {min-width:0}
+.navigation-group h2,.sidebar-tools-title {margin:0 0 4px;padding:5px 9px;font:650 11px/1.4 var(--sans);letter-spacing:1.1px;text-transform:uppercase;color:#a0bccc}
+.navigation-links {display:grid;gap:2px;padding-left:5px;border-left:1px solid #284251;margin-left:6px}
+.navigation-group .nav-button {width:100%;font-family:var(--sans);text-align:left;min-height:35px;padding:6px 8px;margin:0;font-size:14px;gap:9px;border-radius:7px;line-height:1.35}
+.navigation-group .nav-button:hover {background:#203747;color:#e0f6ff}
+.sidebar button:focus-visible,.sidebar a:focus-visible {outline:2px solid var(--accent);outline-offset:-2px}
 .navigation-group .nav-button .icon {width:19px;height:19px;flex-basis:19px}
 .navigation-group .nav-button.active {border:1px solid #67abc8;background:linear-gradient(110deg,#244e66aa,#1b3445);box-shadow:none;color:#e6f7ff}
 .navigation-group .nav-button.active .icon {color:#9addfa}
@@ -62,13 +64,8 @@ body {background:radial-gradient(ellipse at 90% 0,#294c6638,transparent 58%),lin
   word-break:normal;
 }
 .navigation-group .nav-button .icon {flex:0 0 19px}
-.navigation-group > summary {border:0;background:transparent;border-radius:6px}
-.navigation-group > summary:hover {background:#20374770;color:#d7eaf5}
-.navigation-group > summary:focus {outline:none}
-.navigation-group > summary:focus-visible {outline:2px solid var(--accent);outline-offset:2px}
-
-.sidebar-footer {position:sticky;bottom:0;z-index:1;margin-top:auto;flex:0 0 auto;background:#0c1720;padding-top:12px}
-.sidebar-footer .sidebar-foot {margin-top:12px}
+.sidebar-footer {margin-top:auto;padding-top:9px;border-top:1px solid #304b5b}
+.sidebar-footer .sidebar-foot {margin-top:4px}
 .support-link {display:flex;align-items:center;gap:10px;padding:12px 10px;border:1px solid #46677c;border-radius:9px;background:linear-gradient(120deg,#1e3d50,#152b3a);color:#d4efff;text-decoration:none;transition:background .16s,border-color .16s,transform .16s}
 .support-link:hover {border-color:#96d8f7;background:#254b61;transform:translateY(-1px)}
 .support-link:focus-visible {outline:2px solid #a4e0fc;outline-offset:3px}
@@ -77,4 +74,62 @@ body {background:radial-gradient(ellipse at 90% 0,#294c6638,transparent 58%),lin
 .support-link strong {display:block;font:600 14px/1.4 var(--sans)}
 .support-link small {display:block;margin-top:3px;font:12px/1.4 var(--sans);color:#9dbccd}
 .support-external {font-size:18px;color:#9ac4db}
-@media(max-width:760px){.sidebar-footer{position:static;margin-top:14px;padding-top:12px;border-top:1px solid #304b5b}.support-link{max-width:340px;margin:0 auto}.sidebar-footer .sidebar-foot{display:none}}
+@media(max-width:760px){
+  .sidebar {scrollbar-gutter:auto}
+  .panel-navigation {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 8px}
+  .nav-search,#navigationEmpty {grid-column:1 / -1}
+  .navigation-group > .navigation-links {margin-left:3px;padding-left:4px}
+  .navigation-group .nav-button {min-height:38px}
+  .sidebar-footer {margin-top:8px}
+  .support-link {max-width:340px;margin:0 auto}
+  .sidebar-footer .sidebar-foot {display:none}
+}
+
+.login-wrap {
+  min-height: 100dvh;
+  padding: 20px;
+  background: linear-gradient(135deg, #08151bd1, #0b1527b8), url('/hero-world.png') center / cover;
+}
+.login-card {
+  width: min(100%, 460px);
+  padding: clamp(22px, 6vw, 36px);
+  border-color: #456779;
+  border-radius: 18px;
+  background: linear-gradient(155deg, #142832f8, #0e1c26fb);
+  box-shadow: 0 24px 70px #050d16b8;
+}
+.login-brand {display:flex;align-items:center;gap:15px;min-width:0;margin-bottom:14px}
+.login-card .login-brand .brand-mark {flex:0 0 52px;width:52px;height:52px;border-radius:12px}
+.login-brand > div:last-child {min-width:0}
+.login-card .login-brand .eyebrow {margin:0;color:#9addfa}
+.login-card .login-brand h1 {margin:5px 0 0;font-size:clamp(22px, 5vw, 30px);line-height:1.25;overflow-wrap:anywhere}
+.login-card > p.muted {margin-bottom:20px;font-size:14px}
+#loginForm {gap:9px}
+#loginForm .button {min-height:46px;margin-top:4px}
+.login-support {margin-top:17px;padding-top:12px;border-top:1px solid #3d5b6b}
+.login-recovery {padding:5px 0;border:0;color:#b5e4fa;background:transparent;font:600 14px/1.4 var(--sans);text-align:left;cursor:pointer;text-underline-offset:3px}
+.login-recovery:hover,.login-recovery:focus-visible {color:#e8f8ff;text-decoration:underline}
+.login-recovery:focus-visible {outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+.login-card .login-support .hint {margin:6px 0 0}
+
+/* Keep cards at their content height and empty status regions out of the spacing rhythm. */
+#appView {--panel-section-gap:clamp(13px, 1.3vw, 20px)}
+.page-heading {margin-bottom:var(--panel-section-gap, 20px);flex-wrap:wrap}
+.section-title {margin-bottom:14px}
+.view .two-columns > .section-card,.tools-column > .section-card {margin-bottom:0}
+.view#view-configuration > .section-card,
+.view#view-appearance > .section-card,
+.view#view-schedule > .section-card {margin-bottom:var(--panel-section-gap)}
+.view :is([role="status"], [role="alert"]):empty, #loginError:empty {margin:0!important;padding:0!important;border:0;min-height:0}
+#loginError:empty {position:absolute}
+.server-card {min-height:0}
+#view-player-tools .tools-primary {grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:var(--panel-section-gap)}
+.tools-column {display:grid;gap:var(--panel-section-gap);min-width:0}
+.tools-horror {grid-column:1 / -1}
+#view-player-tools .tools-form:last-child {margin-bottom:0}
+#view-player-tools .section-card > .hint:last-child {margin-bottom:0}
+#view-player-tools :is(input[type="text"], input[type="number"], input[type="search"], select) {min-width:0;border:1px solid #456071;border-radius:7px;background:#0e1b25;color:#e2eff7;padding:8px 10px}
+#view-player-tools :is(input, select):focus-visible {outline:2px solid var(--accent);outline-offset:1px}
+@media(max-width:1000px) {
+  #view-player-tools .tools-primary {grid-template-columns:minmax(0,1fr)}
+}

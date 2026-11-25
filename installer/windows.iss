@@ -1,4 +1,4 @@
-#define ProductVersion "1.0.7"
+#define ProductVersion "1.0.8"
 [Setup]
 AppId={{B1E3D826-BCC8-42C1-9982-E455A9F90974}
 AppName=Wolf MC Panel

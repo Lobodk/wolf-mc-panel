@@ -8,6 +8,7 @@ const { createItemCatalog } = require('./item-catalog');
 const { createAutoModpackStatus } = require('./automodpack-status');
 const { createServerFeatures } = require('./server-features');
 const { createModStaging } = require('./mod-staging');
+const { createStaticFiles } = require('./static-assets');
 const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const http = require('node:http');
@@ -20,6 +21,7 @@ const { Transform } = require('node:stream');
 const { pipeline } = require('node:stream/promises');
 const { promisify } = require('node:util');
 const execFileAsync = promisify(execFile);
+const serveStaticFile = createStaticFiles(path.join(__dirname, 'public'));
 
 function createPanelInstance(options = {}) {
 const CODE_DIR = __dirname;
@@ -2487,56 +2489,7 @@ if (maintenanceLock || options.externalBusy?.()) throw Object.assign(new Error('
   
 }
 
-function staticFile(res, pathname, req) {
-  const files = {
-    '/': ['index.html', 'text/html; charset=utf-8'],
-    '/index.html': ['index.html', 'text/html; charset=utf-8'],
-    '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
-    '/manager-ui.js': ['manager-ui.js', 'text/javascript; charset=utf-8'],
-    '/features-ui.js': ['features-ui.js', 'text/javascript; charset=utf-8'],
-    '/navigation-ui.js': ['navigation-ui.js', 'text/javascript; charset=utf-8'],
-    '/layout.css': ['layout.css', 'text/css; charset=utf-8'],
-    '/motd-editor.css': ['motd-editor.css', 'text/css; charset=utf-8'],
-    '/motd-model.js': ['motd-model.js', 'text/javascript; charset=utf-8'],
-    '/motd-editor.js': ['motd-editor.js', 'text/javascript; charset=utf-8'],
-    '/network-ui.js': ['network-ui.js', 'text/javascript; charset=utf-8'],
-    '/player-tools-ui.js': ['player-tools-ui.js', 'text/javascript; charset=utf-8'],
-    '/style.css': ['style.css', 'text/css; charset=utf-8'],
-    '/theme.css': ['theme.css', 'text/css; charset=utf-8'],
-    '/brand-icon.png': ['brand-icon.png', 'image/png'],
-    '/logo.svg': ['logo.svg', 'image/svg+xml'],
-    '/logo.png': ['logo.png', 'image/png'],
-    '/i18n.js': ['i18n.js', 'text/javascript; charset=utf-8'],
-    '/i18n.css': ['i18n.css', 'text/css; charset=utf-8'],
-    '/locales.json': ['locales.json', 'application/json; charset=utf-8'],
-    '/hosting-ui.js': ['hosting-ui.js', 'text/javascript; charset=utf-8'],
-    '/recovery-ui.js': ['recovery-ui.js', 'text/javascript; charset=utf-8'],
-    '/welcome-ui.js': ['welcome-ui.js', 'text/javascript; charset=utf-8'],
-    '/help-ui.js': ['help-ui.js', 'text/javascript; charset=utf-8'],
-    '/edition-ui.js': ['edition-ui.js', 'text/javascript; charset=utf-8'],
-    '/edition.css': ['edition.css', 'text/css; charset=utf-8'],
-    '/help.html': ['help.html', 'text/html; charset=utf-8'],
-    '/hero-world.png': ['hero-world.png', 'image/png'],
-    '/pixel-heading.ttf': ['pixel-heading.ttf', 'font/ttf'],
-  };
-  const item = files[pathname];
-  if (!item) return sendJson(res, 404, { error: 'No encontrado.' });
-  const file = path.join(PUBLIC_DIR, item[0]);
-  fs.readFile(file, (error, data) => {
-    if (error) return sendJson(res, 500, { error: 'No se pudo cargar la interfaz.' });
-    const etag = '"' + crypto.createHash('sha256').update(data).digest('hex') + '"';
-    const unchanged = req?.headers['if-none-match'] === etag;
-    res.writeHead(unchanged ? 304 : 200, {
-      'Content-Type': item[1],
-      'Cache-Control': 'no-cache',
-      'ETag': etag,
-      'X-Content-Type-Options': 'nosniff',
-      'Referrer-Policy': 'no-referrer',
-      'Content-Security-Policy': "default-src 'self'; img-src 'self' data: blob: https://media.forgecdn.net https://mediafilez.forgecdn.net; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
-    });
-    res.end(unchanged ? undefined : data);
-  });
-}
+const staticFile = (res, pathname, req) => serveStaticFile(res, pathname, req, sendJson);
 
 const itemCatalog = createItemCatalog({ serverDir: SERVER_DIR, minecraftVersion: CURSEFORGE_MC_VERSION });
 const playerTools = createPlayerTools({

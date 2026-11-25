@@ -3,10 +3,10 @@
  const make=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
  let settings={name:'Wolf MC Panel',icon:''},image='',ready=false,guideRead=false;
  function apply(){for(const el of document.querySelectorAll('.brand h1,.login-card h1'))if(el.textContent!==settings.name)el.textContent=settings.name;for(const img of document.querySelectorAll('.brand-mark img'))if(img.getAttribute('src')!==(settings.icon||'/logo.png'))img.src=settings.icon||'/logo.png';document.title=settings.name+' · Panel';if(ready)notice.classList.toggle('hidden',guideRead||settings.guideSeen===true);}
- const footer=document.querySelector('.sidebar-footer'),tools=make('div',undefined,'edition-tools');
+ const tools=document.querySelector('.edition-tools');
  const help=make('a','Guía y preguntas frecuentes','edition-help');help.href='/help.html';help.id='editionHelp';
  const prefs=make('button','Personalizar el panel','edition-help');prefs.type='button';
- tools.append(help,prefs);footer.prepend(tools);
+ tools.append(help,prefs);
  const dialog=make('dialog',undefined,'manager-dialog edition-dialog');
  dialog.innerHTML='<div class="section-title"><h2>Personalizar el panel</h2><button id="editionClose" type="button" class="button ghost">Cerrar</button></div><p class="muted">Este nombre y logo identifican el panel. Cada servidor conserva sus propios ajustes.</p><label class="feature-label">Nombre del panel<input id="editionName" type="text" maxlength="60" required></label><label class="feature-label">Logo del panel<input id="editionIconFile" type="file" accept="image/png,image/jpeg,image/webp"></label><p class="hint">La imagen se recorta al centro y se ajusta a 64 × 64 píxeles.</p><img id="editionIconPreview" width="64" height="64" alt="Vista previa del logo"><div class="inline-actions"><button id="editionResetIcon" type="button" class="button secondary">Usar icono predeterminado</button><button id="editionSave" type="button" class="button primary">Guardar personalización</button></div><p id="editionMessage" class="hint" role="status"></p>';
  document.body.append(dialog);const el=id=>document.getElementById(id);

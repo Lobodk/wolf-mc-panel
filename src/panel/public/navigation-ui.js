@@ -3,9 +3,50 @@
  const search=document.getElementById('navigationSearch'),groups=[...document.querySelectorAll('.navigation-group')];let homeTab='servers';
  const normalize=value=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  const aliases={configuration:'ram dificultad pvp vuelo whitelist chunks simulacion ajustes',appearance:'icono imagen descripcion motd colores',backups:'backup restaurar copia automatica',schedule:'programar reinicio hora dias',players:'whitelist operador op ban kick permisos',automodpack:'huella certificado confianza pack descargar',performance:'cpu memoria red ping latencia tps'};
- function sync(view){for(const group of groups){const active=[...group.querySelectorAll('[data-view]')].some(button=>button.dataset.view===view);group.open=active;}document.querySelectorAll('[data-view]').forEach(button=>button.setAttribute('aria-current',button.dataset.view===view?'page':'false'));}
- search.addEventListener('input',()=>{const query=normalize(search.value.trim());let total=0;for(const group of groups){let found=0;for(const button of group.querySelectorAll('[data-view]')){const match=!query||normalize(button.textContent+' '+(aliases[button.dataset.view]||'')).includes(query);button.classList.toggle('navigation-filtered',!match);if(match&&!button.classList.contains('hidden'))found++;}group.hidden=found===0;if(query)group.open=found>0;total+=found;}document.getElementById('navigationEmpty').classList.toggle('hidden',total>0);if(!query)sync(activeView);});
- search.addEventListener('keydown',event=>{if(event.key==='Escape'){search.value='';search.dispatchEvent(new Event('input'));}if(event.key==='Enter'){event.preventDefault();const button=[...document.querySelectorAll('.panel-navigation [data-view]')].find(n=>n.offsetParent&&!n.classList.contains('navigation-filtered'));button?.click();}});
+ function sync(view) {
+  for (const button of document.querySelectorAll('.panel-navigation [data-view], #homeSidebar')) {
+   const active = (button.dataset.view || 'home') === view;
+   if (active) button.setAttribute('aria-current', 'page');
+   else button.removeAttribute('aria-current');
+  }
+ }
+ function filterSections() {
+  const terms = normalize(search.value.trim()).split(/\s+/).filter(Boolean);
+  let total = 0;
+  for (const group of groups) {
+   const title = group.querySelector('h2').textContent;
+   let found = 0;
+   for (const button of group.querySelectorAll('[data-view]')) {
+    const haystack = normalize([title, button.textContent, aliases[button.dataset.view] || ''].join(' '));
+    const match = terms.every(term => haystack.includes(term));
+    button.classList.toggle('navigation-filtered', !match);
+    if (match && !button.classList.contains('hidden')) found++;
+   }
+   group.hidden = found === 0;
+   total += found;
+  }
+  document.getElementById('navigationEmpty').classList.toggle('hidden', total > 0);
+ }
+ search.addEventListener('input', filterSections);
+ search.addEventListener('keydown', event => {
+  if (event.key === 'Escape') {
+   search.value = '';
+   filterSections();
+  }
+  if (event.key === 'Enter') {
+   event.preventDefault();
+   document.querySelector('.navigation-group:not([hidden]) [data-view]:not(.hidden):not(.navigation-filtered)')?.click();
+  }
+ });
+ const autoModpack = document.getElementById('featureAmpNav');
+ if (autoModpack) {
+  new MutationObserver(records => {
+   if (records.some(record => (record.oldValue || '').split(/\s+/).includes('hidden') !== autoModpack.classList.contains('hidden'))) {
+    filterSections();
+   }
+  }).observe(autoModpack, { attributes:true, attributeFilter:['class'], attributeOldValue:true });
+ }
+ window.addEventListener('panel-language', filterSections);
  function selectHome(tab){homeTab=tab;document.querySelectorAll('[data-home-panel]').forEach(panel=>panel.hidden=panel.dataset.homePanel!==tab);document.querySelectorAll('[data-home-tab]').forEach(button=>{const active=button.dataset.homeTab===tab;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));});if(activeView==='home')window.LobodkFeatures?.activate('home');}
  document.querySelectorAll('[data-home-tab]').forEach(button=>button.addEventListener('click',()=>selectHome(button.dataset.homeTab)));
  window.LobodkNavigation={sync,homeTab:()=>homeTab,selectHome};sync(activeView);

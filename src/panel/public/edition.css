@@ -1,4 +1,4 @@
-.edition-tools {display:grid;gap:7px;padding:0 0 11px}
+.edition-tools {display:grid;gap:2px;padding:0 0 8px}
 .password-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:15px 18px;margin-bottom:18px;border:1px solid #527d93;background:#163345;border-radius:9px;font:14px/1.6 var(--sans)}
 .security-dialog input{width:100%;min-height:43px;margin-top:8px}.security-dialog label{display:block}.security-dialog h2{font:700 23px var(--sans)}
 .welcome-tour{position:fixed;inset:0;width:100vw;max-width:none;height:100dvh;max-height:none;padding:0;margin:0;background:transparent;border:0;color:#e6f3ff;overflow:hidden}

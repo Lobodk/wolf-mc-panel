@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.8 — 2026-11-25
+
+- Group server sections in a single scrollable navigation area and separate panel help and recovery.
+- Improve the sign-in layout and place teleport controls next to the other player actions on wide screens.
+- Isolate static file serving from game and mod management. Reuse unchanged assets and their checksums, with automatic refresh after edits.
+- Read the desktop panel version from package metadata so the installer and the running panel report the same version.
+
 ## 1.0.7 — 2026-11-15
 
 - Fix optional CurseForge dependencies so they can be selected and installed with a mod.
