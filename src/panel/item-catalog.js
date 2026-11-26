@@ -109,9 +109,9 @@ async function fetchOfficial(url, expectedHash = '', maxBytes = 20 * 1024 * 1024
 }
 
 /** Cache official, checksum-verified Minecraft language assets. No CurseForge API or credentials. */
-async function loadVanillaSpanish({ serverDir, minecraftVersion = '26.3' }) {
+async function loadVanillaSpanish({ serverDir, panelDir=path.join(serverDir,'panel'), minecraftVersion = '26.3' }) {
   if (!/^[0-9A-Za-z_.-]{1,50}$/.test(minecraftVersion)) throw new Error('Versión de idioma inválida');
-  const cache = path.join(serverDir, 'panel', 'cache', 'item-languages', minecraftVersion + '.json');
+  const cache = path.join(panelDir, 'cache', 'item-languages', minecraftVersion + '.json');
   try {
     const saved = JSON.parse(await fsp.readFile(cache, 'utf8'));
     if (saved.version !== minecraftVersion || !saved.assets?.es_es) throw new Error('Caché de idioma antigua');
@@ -196,10 +196,11 @@ function distinguishNames(items) {
   return items;
 }
 
-function createLocalizedCatalog({ serverDir, minecraftVersion = '26.3', language = 'es', resourceLoader = require('./item-resources').createResourceLoader(readZipEntries), languageLoader = readJarLanguages, vanillaLoader = loadVanillaSpanish,
+function createLocalizedCatalog({ serverDir, panelDir, minecraftVersion = '26.3', language = 'es', resourceLoader = require('./item-resources').createResourceLoader(readZipEntries), languageLoader = readJarLanguages, vanillaLoader = loadVanillaSpanish,
     now = Date.now, checkIntervalMs = 3000 } = {}) {
   if (!serverDir) throw new Error('serverDir requerido');
-  const snapshotFile = path.join(serverDir, 'panel', 'telemetry', 'items.json');
+  const localPanel = panelDir || path.join(serverDir,'panel');
+  const snapshotFile = path.join(localPanel, 'telemetry', 'items.json');
   const modsDir = path.join(serverDir, 'mods');
   const jarCache = new Map();
   let lastChecked = -Infinity, inFlight = null, currentSignature = '', registrySignature = '', vanilla = null, nextVanillaAttempt = 0;
@@ -226,7 +227,7 @@ function createLocalizedCatalog({ serverDir, minecraftVersion = '26.3', language
     if (snapshot.schema !== 1 || !Array.isArray(snapshot.items) || snapshot.items.length > 100000 || !Number.isFinite(Number(snapshot.generatedAt))) throw new Error('El catálogo del servidor no es válido');
     const warnings = [];
     if (!vanilla && now() >= nextVanillaAttempt) {
-      try { vanilla = await vanillaLoader({ serverDir, minecraftVersion }); }
+      try { vanilla = await vanillaLoader({ serverDir, panelDir:localPanel, minecraftVersion }); }
       catch { nextVanillaAttempt = now() + 5 * 60 * 1000; warnings.push('No se pudo cargar todavía el idioma español de Minecraft.'); }
     }
     const resources = await resourceLoader({ serverDir, jars, snapshot });

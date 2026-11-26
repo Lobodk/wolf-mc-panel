@@ -33,7 +33,7 @@ function validateBridge(value, now=Date.now()) {
   return {sampledAt:value.sampledAt,pid:value.pid,players,mspt:Number.isFinite(value.mspt)?value.mspt:null,
     observedTps:Number.isFinite(value.observedTps)?value.observedTps:null};
 }
-function createNetworkMonitor({powershell,script,serverPort,bridgeFile,intervalMs=5000}) {
+function createNetworkMonitor({powershell,script,serverPort,bridgeFile,intervalMs=5000,readSample,hostLabel='PC del panel'}) {
   let previous=null,baseline=null,history=[],latest=null,error='',busy=false;
   let playerHistory=new Map(),bridgePid=null;
   const startedAt=Date.now();
@@ -41,8 +41,13 @@ function createNetworkMonitor({powershell,script,serverPort,bridgeFile,intervalM
     if(busy)return;
     busy=true;
     try {
-      const {stdout}=await run(powershell,['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',script,'-MinecraftPort',String(serverPort)],{timeout:10000,windowsHide:true,maxBuffer:65536});
-      const raw=JSON.parse(stdout.replace(/^\uFEFF/,'').trim());
+      let raw;
+      if(readSample)raw=await readSample();
+      else {
+        const {stdout}=await run(powershell,['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',script,'-MinecraftPort',String(serverPort)],{timeout:10000,windowsHide:true,maxBuffer:65536});
+        raw=JSON.parse(stdout.replace(/^\uFEFF/,'').trim());
+      }
+      if(!raw||!Number.isFinite(raw.sampledAt))throw Error('El equipo no devolvió datos de red.');
       const rates=deltaCounters(previous,raw);
       if(raw.available&&(!baseline||baseline.adapter.id!==raw.adapter.id||raw.counters.receivedBytes<baseline.counters.receivedBytes||raw.counters.sentBytes<baseline.counters.sentBytes))baseline=raw;
       const game=raw.gameListening?await fs.readFile(bridgeFile,'utf8').then(s=>validateBridge(JSON.parse(s))).catch(()=>null):null;
@@ -64,12 +69,12 @@ function createNetworkMonitor({powershell,script,serverPort,bridgeFile,intervalM
         gatewayProbe:raw.gatewayProbe??null,internetProbe:raw.internetProbe??null});
       history=history.filter(s=>s.at>raw.sampledAt-WINDOW_MS).slice(-120);
       previous=raw;error='';
-    }catch(e){error='No se pudo leer la telemetría de red de Windows.';}
+    }catch(e){error=readSample?e.message:'No se pudo leer la telemetría de red de Windows.';}
     finally{busy=false;}
   }
   let samplePromise=null,stopped=false;
   return {async snapshot(){if(!stopped&&(!latest||Date.now()-latest.sampledAt>=intervalMs)&&!samplePromise)samplePromise=sample().finally(()=>{samplePromise=null;});if(samplePromise)await samplePromise;return {startedAt,intervalMs,windowMs:WINDOW_MS,sampledAt:latest?.sampledAt??null,
-    stale:Boolean(error)||!latest||Date.now()-latest.sampledAt>20000,error,host:latest,
+    stale:Boolean(error)||!latest||Date.now()-latest.sampledAt>20000,error,host:latest,hostLabel,
     probes:{gateway:probeSummary(history,'gatewayProbe'),internet:probeSummary(history,'internetProbe')},
     history:history.map(({gatewayProbe,internetProbe,...s})=>s)};},stop(){stopped=true;}};
 }

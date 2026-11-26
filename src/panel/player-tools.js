@@ -34,8 +34,8 @@ function actionCommand(data,name,death,itemArgument){
   default:fail('Acción no válida.');
  }
 }
-function createPlayerTools({serverDir,rcon,onlineNames,canMutate=()=>true,canRestore=()=>true,graveReader=null,validateItemId=async()=>true,resolveItemArgument=null,features=()=>({graves:true,horror:true}),modernCommands=true}){
- const stateFile=path.join(serverDir,'panel/player-tools-state.json');
+function createPlayerTools({serverDir,panelDir=path.join(serverDir,'panel'),rcon,onlineNames,canMutate=()=>true,canRestore=()=>true,graveReader=null,validateItemId=async()=>true,resolveItemArgument=null,features=()=>({graves:true,horror:true}),modernCommands=true}){
+ const stateFile=path.join(panelDir,'player-tools-state.json');
  let state={history:[],jobs:[],graves:{},quietLease:false};
  if(fs.existsSync(stateFile)){const saved=JSON.parse(fs.readFileSync(stateFile,'utf8'));state={...state,...saved};}
  // Import only explicit, verified receipts from earlier manual recoveries.
@@ -191,7 +191,7 @@ function createPlayerTools({serverDir,rcon,onlineNames,canMutate=()=>true,canRes
   try{
    let result;
    if(req.method==='GET'&&url.pathname==='/api/player-tools')result=await snapshot();
-   else if(req.method==='POST'&&url.pathname==='/api/player-tools/history/clear'){result=await serial('Limpiando registro',async()=>{if(!canMutate())fail('Espera a que termine el mantenimiento.',409);if(state.history.length){const dir=path.join(serverDir,'panel/history-archive');await fsp.mkdir(dir,{recursive:true});await fsp.writeFile(path.join(dir,crypto.randomUUID()+'.json'),JSON.stringify(state.history));}state.history=[];save();return {message:'Registro de acciones del panel limpiado.'};});}
+   else if(req.method==='POST'&&url.pathname==='/api/player-tools/history/clear'){result=await serial('Limpiando registro',async()=>{if(!canMutate())fail('Espera a que termine el mantenimiento.',409);if(state.history.length){const dir=path.join(panelDir,'history-archive');await fsp.mkdir(dir,{recursive:true});await fsp.writeFile(path.join(dir,crypto.randomUUID()+'.json'),JSON.stringify(state.history));}state.history=[];save();return {message:'Registro de acciones del panel limpiado.'};});}
    else if(req.method==='GET'&&url.pathname==='/api/player-tools/deaths')result={deaths:await deaths(url.searchParams.get('name'))};
    else if(req.method==='POST'&&url.pathname==='/api/player-tools/action'){const data=await readJson(req);result=await serial(data.action,()=>executeAction(data));}
    else if(req.method==='POST'&&url.pathname==='/api/player-tools/restore'){const data=await readJson(req);result=await serial('Restaurando lápidas',()=>restoreGraves(data));}

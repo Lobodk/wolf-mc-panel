@@ -3,9 +3,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 
-function createModStaging(serverDir) {
+function createModStaging(serverDir, panelDir = path.join(serverDir,'panel')) {
   const mods = path.join(serverDir, 'mods');
-  const root = path.join(serverDir, 'panel', 'pending-mods');
+  const root = path.join(panelDir, 'pending-mods');
   const manifest = path.join(root, 'manifest.json');
   const journal = path.join(root, 'applying.json');
   const safe = name => typeof name === 'string' && name.length <= 180 && !name.startsWith('.') && !/[\\/\x00-\x1f<>:"|?*]/.test(name) && name.endsWith('.jar');
@@ -68,7 +68,9 @@ function createModStaging(serverDir) {
       if (e.replaceName && hash(path.join(mods, e.replaceName)) !== e.oldHash) throw Error('El mod original ha cambiado; vuelve a preparar la actualización: ' + e.replaceName);
       if (fs.existsSync(path.join(mods, e.name)) && e.name !== e.replaceName) throw Error('Ya existe el mod de destino: ' + e.name);
     }
-    const backupDir = path.join(serverDir, 'panel', 'mod-rollback', 'batch-' + crypto.randomUUID());
+    const sameVolume = path.resolve(panelDir) === path.join(path.resolve(serverDir),'panel');
+    const rollback = sameVolume ? path.join(panelDir,'mod-rollback') : path.join(serverDir,'.wolfmc-mod-rollback');
+    const backupDir = path.join(rollback, 'batch-' + crypto.randomUUID());
     fs.mkdirSync(backupDir, { recursive: true });
     const tx = { entries, backupDir, committed: false };
     write(journal, tx);

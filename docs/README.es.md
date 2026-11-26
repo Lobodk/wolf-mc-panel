@@ -69,7 +69,14 @@ La interfaz empieza en español. El selector permite inglés, alemán, francés,
 
 ## Tu PC principal y el servidor
 
-Instala el panel donde se ejecuta Minecraft. Desde el principal accede a su dirección web; no necesitas otra instalación para administrarlo. Cerrar el navegador no apaga Minecraft. Detener panel cierra la interfaz y su proxy HTTPS, pero conserva los procesos de Minecraft ya iniciados.
+Instala el panel en el PC Windows que permanecerá encendido. Puedes administrar Minecraft desde otro navegador y vincular un segundo PC Windows para alojar un servidor.
+
+1. Selecciona el servidor y abre **Cambiar PC del servidor**. Elige la dirección de red local del equipo del panel y pulsa **Descargar herramienta**.
+2. Abre **Preparar-WolfMC.cmd** en el segundo PC y acepta el aviso de administrador. El asistente configura OpenSSH, SMB cifrado y la tarea que ejecutará Minecraft.
+3. Usa **Importar vinculación** en el panel y selecciona **Vinculacion-WolfMC-Windows.json**. El archivo lleva la credencial SMB cifrada específicamente para ese panel.
+4. Usa **Trasladar al PC de destino** o **Volver al PC del panel**. El panel guarda y apaga Minecraft, copia los cambios y arranca el mundo tras verificar la copia. La dirección de juego TCP sigue entrando por el equipo del panel.
+
+Cada instalación admite un servidor vinculado para traslado, con Java 9 o superior y ambos equipos en la misma red privada. Reserva las IP locales para conservar la vinculación. Si Windows bloquea las conexiones de Minecraft al trasladarlo, vuelve al PC del panel y usa su opción de firewall para permitir el reenvío TCP del puerto de juego. Durante el traslado, los jugadores se desconectan. Puedes reanudar una copia interrumpida y reintentar el arranque después de verificarla.
 
 La dirección para jugar y la del panel son diferentes. Un dominio no abre puertos ni evita CG-NAT. Reenvía únicamente los servicios que necesitas y no publiques RCON. El panel incluye ayuda para routers, DDNS y túneles de terceros; su disponibilidad y condiciones dependen de cada proveedor.
 

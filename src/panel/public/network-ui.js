@@ -49,6 +49,7 @@
   }
   function render(data,httpMs){
     const host=data.host;
+    if(data.hostLabel)text('networkHostDescription','Tráfico total del '+data.hostLabel.toLowerCase()+', incluido Minecraft y otras aplicaciones.');
     drawChart(data.history||[]);
     if(!host||data.stale||!host.available){
       state(data.error?'Lectura no disponible':data.stale&&host?'Datos antiguos':'Midiendo…',data.error||host?'warning':'neutral');
