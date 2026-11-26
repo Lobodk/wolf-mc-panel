@@ -620,7 +620,7 @@ async function loadPerformance() {
     setProgress('perfCpuProgress', cpuPercent);
     $('perfUptime').textContent = formatDuration(data.uptimeSeconds);
     $('perfUptimeDetail').textContent = data.startedAt
-      ? 'Arrancó ' + new Date(data.startedAt).toLocaleString('es-ES')
+      ? 'Inicio del servidor: ' + new Date(data.startedAt).toLocaleString('es-ES')
       : 'Desde el último arranque';
   } catch (error) {
     $('perfError').textContent = error.message;
