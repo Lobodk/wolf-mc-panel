@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1 — 2026-11-26
+
+- Refresh the panel with the stone theme and an updated English screenshot gallery.
+- Give the sidebar larger labels, more room between entries, and clearer navigation groups.
+
 ## 1.1.0 — 2026-11-26
 
 - Download a single setup tool from the panel to pair another Windows PC on your local network.
