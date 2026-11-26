@@ -4,7 +4,7 @@
  const key='wolf-panel-language';let language='es',catalog={},lookup={},patterns=[],scheduled=false,ready=false;
  try{const saved=localStorage.getItem(key);if(languages[saved])language=saved;}catch{}
  const textState=new WeakMap(),attributeState=new WeakMap(),controls=[];
- const excluded='script,style,pre,code,textarea,input,[data-no-i18n],.brand h1,.login-card h1,.motd-font-sample,.motd-preview-content,.mod-display-name,.mod-file-name,.server-card h3,.player-name';
+ const excluded='script,style,pre,code,textarea,input,[data-no-i18n],.brand h1,.login-card h1,.motd-font-sample,.motd-preview-content > :not(.motd-preview-server-name),.mod-display-name,.mod-file-name,.server-card h3,.player-name';
  function translate(value){const normalized=String(value).replace(/\s+/g,' ').trim();if(language==='es'||brand.has(normalized))return value;const dictionary=catalog[language]||{};let result=dictionary[normalized];
   if(!result){const variant=lookup[language]?.get(normalized.toLocaleLowerCase('es'));if(variant)result=normalized===normalized.toLocaleUpperCase('es')?variant.toLocaleUpperCase(language==='pt'?'pt-BR':language):variant;}
   if(!result){for(const pattern of patterns){const match=normalized.match(pattern.regex);if(match&&dictionary[pattern.source]){result=dictionary[pattern.source];pattern.slots.forEach((slot,i)=>{result=result.replaceAll(slot,()=>match[i+1]);});break;}}}

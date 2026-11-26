@@ -8,11 +8,13 @@ Un panel gratuito y de código abierto para crear y administrar servidores de Mi
 
 ## Así es el panel
 
-Capturas de Wolf MC Panel 1.0.8 con datos de demostración. Las pantallas pueden verse en español o inglés; el panel dispone de seis idiomas. El estado del servidor y las acciones disponibles dependen de cada instalación.
+Las capturas muestran el panel público en inglés con datos de demostración. El estado del servidor y las acciones disponibles dependen de cada instalación.
 
 ### Servidores y creación paso a paso
 
-![Lista de servidores](../assets/screenshots/servers.jpg)
+![Lista de servidores](../assets/screenshots/servers-en.jpg)
+
+![Recursos del equipo y versiones de Java](../assets/screenshots/servers.jpg)
 
 ![Asistente para crear un servidor](../assets/screenshots/create-server.jpg)
 

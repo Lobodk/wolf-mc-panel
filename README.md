@@ -23,13 +23,15 @@ A free, open-source Minecraft Java server manager for **Windows x64**. Create lo
 
 ## See the panel
 
-Screenshots show Wolf MC Panel 1.0.8 with demonstration data. The interface is shown in Spanish or English; six languages are available. Server state and available actions depend on your installation.
+Screenshots show the public panel in English with demonstration data. Server state and available actions depend on your installation.
 
 ### Your servers and the creation wizard
 
 Keep independent servers together and choose Minecraft, a loader and connection settings step by step.
 
 ![Server home in English](assets/screenshots/servers-en.jpg)
+
+![Host resources and Minecraft runtimes](assets/screenshots/servers.jpg)
 
 ![Create a Minecraft server](assets/screenshots/create-server.jpg)
 

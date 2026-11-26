@@ -1,6 +1,29 @@
 'use strict';
 (()=>{
  const search=document.getElementById('navigationSearch'),groups=[...document.querySelectorAll('.navigation-group')];let homeTab='servers';
+ const mobileMenu=document.getElementById('mobileNavigationToggle');
+ const sidebar=document.getElementById('panelSidebar');
+ const topbar=document.querySelector('#appView .topbar');
+ new ResizeObserver(()=>{
+  const height=Math.ceil(topbar.getBoundingClientRect().height);
+  if(height)topbar.parentElement.style.setProperty('--sticky-top',height+'px');
+ }).observe(topbar);
+ const narrow=matchMedia('(max-width: 760px)');
+ function setMenu(open){mobileMenu.setAttribute('aria-expanded',String(open));}
+ mobileMenu.addEventListener('click',()=>setMenu(mobileMenu.getAttribute('aria-expanded')!=='true'));
+ sidebar.addEventListener('click',event=>{
+  if(narrow.matches&&event.target.closest('[data-view], #homeSidebar')){
+   setMenu(false);
+   mobileMenu.focus({preventScroll:true});
+  }
+ });
+ sidebar.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&narrow.matches&&mobileMenu.getAttribute('aria-expanded')==='true'&&event.target!==search){
+   setMenu(false);
+   mobileMenu.focus();
+  }
+ });
+ narrow.addEventListener('change',()=>setMenu(false));
  const normalize=value=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  const aliases={configuration:'ram dificultad pvp vuelo whitelist chunks simulacion ajustes',appearance:'icono imagen descripcion motd colores',backups:'backup restaurar copia automatica',schedule:'programar reinicio hora dias',players:'whitelist operador op ban kick permisos',automodpack:'huella certificado confianza pack descargar',performance:'cpu memoria red ping latencia tps'};
  function sync(view) {
