@@ -536,7 +536,7 @@ function formatMemory(bytes) {
 }
 
 function formatDuration(seconds) {
-  if (!Number.isFinite(Number(seconds))) return '—';
+  if (seconds == null || !Number.isFinite(Number(seconds))) return '—';
   let remaining = Math.max(0, Math.floor(Number(seconds)));
   const days = Math.floor(remaining / 86400);
   remaining %= 86400;
@@ -556,8 +556,8 @@ function setProgress(id, percent) {
 async function loadPerformance() {
   try {
     const data = await api('/api/performance');
-    $('perfUpdated').textContent = 'Actualizado ' + new Date(data.sampledAt).toLocaleTimeString('es-ES');
-    $('perfError').textContent = '';
+    $('perfUpdated').textContent = (data.hostLabel ? data.hostLabel+' · ' : '')+'Actualizado '+new Date(data.sampledAt).toLocaleTimeString('es-ES');
+    $('perfError').textContent = data.telemetryError || '';
 
     const total = Number(data.totalMemoryBytes) || 0;
     const free = Number(data.freeMemoryBytes) || 0;
@@ -582,14 +582,14 @@ async function loadPerformance() {
     }
 
     if (!data.running) {
-      $('perfHeapUsed').textContent = 'Servidor apagado';
-      $('perfHeapDetail').textContent = 'No hay una JVM del servidor activa.';
+      $('perfHeapUsed').textContent = data.running===false?'Servidor apagado':'Estado no disponible';
+      $('perfHeapDetail').textContent = data.running===false?'No hay una JVM del servidor activa.':'No se pudo confirmar el estado del servidor.';
       $('perfHeapPercent').textContent = '—';
       $('perfWorkingSet').textContent = '—';
       $('perfProcessPrivate').textContent = 'Memoria privada: —';
       $('perfProcessPercent').textContent = '—';
       $('perfCpu').textContent = '—';
-      $('perfCpuDetail').textContent = 'Servidor apagado';
+      $('perfCpuDetail').textContent = data.running===false?'Servidor apagado':'Sin datos recientes';
       $('perfUptime').textContent = '—';
       $('perfUptimeDetail').textContent = 'Desde el último arranque';
       ['perfHeapProgress', 'perfProcessProgress', 'perfCpuProgress'].forEach((id) => setProgress(id, 0));

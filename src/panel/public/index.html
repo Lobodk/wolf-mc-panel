@@ -23,6 +23,7 @@
   <script src="/edition-ui.js?v=1.0.8" defer></script>
   <script src="/welcome-ui.js?v=1.0.1" defer></script>
   <script src="/hosting-ui.js" defer></script>
+  <script src="/migration-ui.js" defer></script>
   <script src="/recovery-ui.js?v=1.0.8" defer></script>
 <link rel="stylesheet" href="/i18n.css"><script src="/i18n.js" defer></script></head>
 <body class="hide-addresses">
@@ -303,7 +304,7 @@
 
           <article id="networkTelemetry" class="section-card network-panel">
             <div class="section-title"><div><p class="eyebrow">TRÁFICO Y LATENCIA</p><h3><svg class="icon" aria-hidden="true"><use href="#i-network"></use></svg> Telemetría de red</h3></div><div class="inline-actions"><span id="networkState" class="network-quality" data-state="neutral">Midiendo…</span><button id="refreshNetworkButton" type="button" class="button secondary compact">Actualizar red</button></div></div>
-            <p class="muted">Tráfico total del PC en su adaptador principal. Incluye Minecraft, descargas y otras aplicaciones.</p>
+            <p id="networkHostDescription" class="muted">Tráfico total del equipo, incluido Minecraft y otras aplicaciones.</p>
             <div class="network-metrics">
               <div><span class="stat-label">BAJADA DEL PC</span><strong id="netDownload">—</strong><small id="netDownloadDetail">Esperando muestras</small></div>
               <div><span class="stat-label">SUBIDA DEL PC</span><strong id="netUpload">—</strong><small id="netUploadDetail">Esperando muestras</small></div>

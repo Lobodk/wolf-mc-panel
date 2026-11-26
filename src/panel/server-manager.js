@@ -14,7 +14,7 @@ async function portOpen(port){return (await Promise.all(['127.0.0.1',...localAdd
 function prop(text,key,value){const lines=String(text).split(/\r?\n/),prefix=key+'=';return [...lines.filter(line=>!line.startsWith(prefix)&&line!==''),prefix+String(value).replace(/[\r\n]/g,'')].join('\n')+'\n';}
 const samePath=(left,right)=>{const a=path.resolve(left),b=path.resolve(right);return process.platform==='win32'?a.toLowerCase()===b.toLowerCase():a===b;};
 async function canonicalChild(directory,parent,name){const stat=await fsp.lstat(directory);return stat.isDirectory()&&!stat.isSymbolicLink()&&samePath(await fsp.realpath(directory),path.join(await fsp.realpath(parent),name));}
-function createServerManager({main,factory,codeDir,catalogProvider=catalogs,probe=portOpen,commandRunner=run,bridgeProvider=prepareRegistryBridge,dataDir,includeLegacy=false}){
+function createServerManager({main,factory,codeDir,catalogProvider=catalogs,probe=portOpen,commandRunner=run,bridgeProvider=prepareRegistryBridge,dataDir,includeLegacy=false,nativeHosting}){
  const run=commandRunner;
  const stateDir=dataDir||codeDir,registryFile=path.join(stateDir,'servers.json'),baseDir=path.join(stateDir,'servers'),runtimeBase=path.join(stateDir,'runtimes');
  const mainDir=path.resolve(codeDir,'..'),instances=new Map([['main',main]]),jobs=new Map(),busy=new Set(),runtimeJobs=new Map(),deleteIntents=new Map();let creating=false;
@@ -28,9 +28,29 @@ function createServerManager({main,factory,codeDir,catalogProvider=catalogs,prob
  function publicRecord(r){const local=localAddresses();let memoryMb=r.memoryMb;try{const match=/-Xmx(\d+)([gm])/i.exec(fs.readFileSync(path.join(r.directory,'user_jvm_args.txt'),'utf8'));if(match)memoryMb=Number(match[1])*(match[2].toLowerCase()==='g'?1024:1);}catch{}return {id:r.id,name:r.name,minecraftVersion:r.minecraftVersion,loader:r.loader,loaderVersion:r.loaderVersion||'',serverPort:r.serverPort,externalPort:r.externalPort,publicHost:r.publicHost,localAddress:(r.bindAddress||local[0]||'127.0.0.1')+':'+r.serverPort,publicAddress:r.publicHost+(r.externalPort===25565?'':':'+r.externalPort),memoryMb,status:r.status,error:r.error||'',busy:busy.has(r.id),legacy:Boolean(r.legacy),eulaAccepted:Boolean(r.eulaAccepted||r.legacy),createdAt:r.createdAt,bindAddress:r.bindAddress||''};}
  function assertFree(port,id,field){for(const r of records){if(r.id===id)continue;if([r.serverPort,r.rconPort].includes(port))fail('Ese puerto ya está reservado por '+r.name+'.');if(field==='external'&&r.externalPort===port)fail('Ese puerto público ya pertenece a '+r.name+'.');}if(port===main.config.port)fail('Ese puerto pertenece al panel web.');}
  async function allocate(start){for(let p=start;p<=65535;p++){if(p===main.config.port||records.some(r=>[r.serverPort,r.rconPort].includes(p)))continue;if(!await probe(p))return p;}fail('No se encuentra un puerto libre.');}
+ const moved = r => r.id===nativeHosting?.id && nativeHosting.owner().owner==='primary';
+ const travelling = id => id===nativeHosting?.id && nativeHosting.blocked();
+ const activeRequests=new Map();
+ async function track(id,work){
+  activeRequests.set(id,(activeRequests.get(id)||0)+1);
+  try{return await work();}
+  finally{const count=activeRequests.get(id)-1;if(count)activeRequests.set(id,count);else activeRequests.delete(id);}
+ }
  function instance(id){const r=record(id);if(r.status!=='ready')fail(r.error||'El servidor todavía no está instalado.',409);if(instances.has(id))return instances.get(id);
-  const obj=factory({serverDir:r.directory,record:r,appDataDir:stateDir,panelToken:main.config.panelToken,backupId:r.name.replace(/[^a-zA-Z0-9_-]+/g,'-')+'-'+r.id.slice(0,8),javaHome:r.javaHome,launch:()=>launch(r),externalBusy:()=>busy.has(id)});instances.set(id,obj);return obj;}
- async function launch(r){if(busy.has(r.id))fail('Hay una instalación en curso.',409);if(processAlive(r))fail('Java sigue arrancando o apagando este servidor. Espera y revisa la consola.',409);if(!r.eulaAccepted)fail('Debes aceptar la EULA de Minecraft antes de iniciar.',409);const launch=JSON.parse(await fsp.readFile(path.join(r.directory,'panel/launch.json'),'utf8'));const output=fs.openSync(path.join(r.directory,'panel/process.log'),'a');
+  const remote=moved(r)?nativeHosting.context():null;
+  const allowsHandoff=()=>r.id===nativeHosting?.id&&nativeHosting.allowsLocalHandoff();
+  const obj=factory({serverDir:remote?.root||r.directory,panelDir:path.join(r.directory,'panel'),record:r,appDataDir:stateDir,panelToken:main.config.panelToken,backupId:r.name.replace(/[^a-zA-Z0-9_-]+/g,'-')+'-'+r.id.slice(0,8),javaHome:r.javaHome,launch:remote?.start||(handoff=>launch(r,handoff)),remote,allowsHandoff,externalBusy:()=>busy.has(id)||travelling(id)});instances.set(id,obj);return obj;}
+ async function route(id,req,res,url){
+  const r=record(id);
+  const work=async()=>{
+   if(travelling(id) && req.method!=='GET')fail('Hay un traslado pendiente de Minecraft.',409);
+   if(moved(r))await nativeHosting.context().ensure();
+   if(travelling(id)&&req.method!=='GET')fail('Hay un traslado pendiente de Minecraft.',409);
+   return await instance(id).handleApi(req,res,url);
+  };
+  return req.method==='GET'?work():track(id,work);
+ }
+ async function launch(r,handoff=false){const fenced=()=>moved(r)||(travelling(r.id)&&!(handoff&&nativeHosting.allowsLocalHandoff()));if(fenced())fail('Esta copia no tiene el permiso de arranque.',409);if(busy.has(r.id))fail('Hay una instalación en curso.',409);if(processAlive(r))fail('Java sigue arrancando o apagando este servidor. Espera y revisa la consola.',409);if(!r.eulaAccepted)fail('Debes aceptar la EULA de Minecraft antes de iniciar.',409);const launch=JSON.parse(await fsp.readFile(path.join(r.directory,'panel/launch.json'),'utf8'));if(fenced())fail('Esta copia no tiene el permiso de arranque.',409);const output=fs.openSync(path.join(r.directory,'panel/process.log'),'a');
   const jvmFile=path.join(r.directory,'user_jvm_args.txt');const jvmArgs=r.javaMajor<9?fs.readFileSync(jvmFile,'utf8').split(/\r?\n/).filter(line=>line.trim()&&!line.trim().startsWith('#')).flatMap(line=>line.trim().split(/\s+/)):['@'+jvmFile];
   const child=spawn(path.join(r.javaHome,'bin/java.exe'),[...jvmArgs,'-Dterminal.jline=false','-Dterminal.ansi=false',...(launch.bridgeArg?[launch.bridgeArg]:[]),...launch.args],{cwd:r.directory,windowsHide:true,detached:true,stdio:['ignore',output,output]});fs.closeSync(output);await new Promise((resolve,reject)=>{child.once('spawn',resolve);child.once('error',reject);});child.unref();write(path.join(r.directory,'panel/managed-process.json'),{pid:child.pid,startedAt:Date.now()});return child;}
  function updateJob(job,fields){Object.assign(job,fields,{updatedAt:Date.now()});}
@@ -112,7 +132,19 @@ function createServerManager({main,factory,codeDir,catalogProvider=catalogs,prob
   const configFile=path.join(r.directory,'panel/panel-config.json'),cfg=JSON.parse(await fsp.readFile(configFile,'utf8'));cfg.serverPort=serverPort;cfg.rconHost=bindAddress||'127.0.0.1';write(configFile,cfg);const agentConfig=path.join(r.directory,'panel/registry-agent.properties');if(fs.existsSync(agentConfig))await fsp.writeFile(agentConfig,prop(await fsp.readFile(agentConfig,'utf8'),'host',cfg.rconHost));if(!r.legacy&&instances.has(r.id)){instances.get(r.id).close();instances.delete(r.id);}save();return {server:publicRecord(r)};
  }
  async function network(r){const info=publicRecord(r);let addresses=[];try{addresses=await dns.resolve4(r.publicHost);}catch{}const coverage=preconfiguredNetwork(codeDir,r,localAddresses());return {...info,preconfigured:coverage,networkMessage:coverage.firewall&&coverage.router?'Puerto cubierto por las reglas manuales registradas de Windows y del router; no necesita UPnP.':'',localAddresses:localAddresses(),dnsAddresses:addresses,localListening:await probe(r.serverPort),externalReachability:'not-verified',networkWarnings:currentWarnings(r.networkWarnings,coverage),routerRule:{protocol:'TCP',wanPort:r.externalPort,lanPort:r.serverPort,lanHost:r.bindAddress||localAddresses()[0]||''},message:'La asignación en el panel no abre por sí sola el puerto del router. La comprobación local no confirma el acceso desde Internet.'};}
- async function applyFirewall(r){if(preconfiguredNetwork(codeDir,r,localAddresses()).firewall)return {ok:true,message:'Este puerto ya está permitido por la regla manual de Windows.'};if(r.legacy)fail('La regla del servidor original se conserva.');const java=path.join(r.javaHome,'bin/java.exe');const escaped=java.replace(/'/g,"''"),label='Lobodk Minecraft '+r.id;const command=`$ErrorActionPreference='Stop'; Get-NetFirewallRule -DisplayName '${label}' -ErrorAction SilentlyContinue | Remove-NetFirewallRule; New-NetFirewallRule -DisplayName '${label}' -Direction Inbound -Action Allow -Protocol TCP -LocalPort ${r.serverPort} -Program '${escaped}' -Profile Any | Out-Null; 'OK'`;try{await run('powershell.exe',['-NoProfile','-NonInteractive','-Command',command],{windowsHide:true,timeout:20000,maxBuffer:1024*1024});return {ok:true,message:'Regla de Windows creada solo para el puerto de juego.'};}catch{fail('Windows no permitió crear la regla. Ejecuta el panel con permisos de administrador o crea la regla desde el firewall de Windows.',409);}}
+ async function applyFirewall(r){
+  if(preconfiguredNetwork(codeDir,r,localAddresses()).firewall)return {ok:true,message:'Este puerto ya está permitido por la regla manual de Windows.'};
+  if(r.legacy)fail('La regla del servidor original se conserva.');
+  const permits=[['Lobodk Minecraft '+r.id,path.join(r.javaHome,'bin/java.exe')],['Wolf MC Relay '+r.id,process.execPath]];
+  const labels=permits.map(([name,program])=>{
+   const escaped=program.replace(/'/g,"''");
+   return `$rule=Get-NetFirewallRule -DisplayName '${name}' -ErrorAction SilentlyContinue; if ($rule) { $rule | Set-NetFirewallRule -Enabled True -Direction Inbound -Action Allow -Protocol TCP -LocalPort ${r.serverPort} -Program '${escaped}' -Profile Any | Out-Null } else { New-NetFirewallRule -DisplayName '${name}' -Direction Inbound -Action Allow -Protocol TCP -LocalPort ${r.serverPort} -Program '${escaped}' -Profile Any | Out-Null }`;
+  });
+  try {
+   await run('powershell.exe',['-NoProfile','-NonInteractive','-Command',"$ErrorActionPreference='Stop'; "+labels.join(' ; ')],{windowsHide:true,timeout:20000,maxBuffer:1024*1024});
+   return {ok:true,message:'Firewall configurado para Java y el reenvío TCP del puerto de juego.'};
+  } catch {fail('Windows no permitió crear la regla. Abre el panel como administrador o revisa el firewall de Windows.',409);}
+ }
  async function upnp(r){if(preconfiguredNetwork(codeDir,r,localAddresses()).router)return {ok:true,message:'Este puerto ya está incluido en la regla manual del router. No necesita UPnP.'};if(r.legacy)fail('La conexión del servidor original se conserva.');const ip=r.bindAddress||localAddresses()[0];if(!ip)fail('No hay una IP LAN disponible.');const script=`$ErrorActionPreference='Stop'; $nat=New-Object -ComObject HNetCfg.NATUPnP; $maps=$nat.StaticPortMappingCollection; if($null -eq $maps){throw 'UPnP no disponible'}; $old=$null;try{$old=$maps.Item(${r.externalPort},'TCP')}catch{};if($old -and ($old.InternalClient -ne '${ip}' -or $old.InternalPort -ne ${r.serverPort})){throw 'Puerto ocupado en router'};if(-not $old){$maps.Add(${r.externalPort},'TCP',${r.serverPort},'${ip}',$true,'Lobodk Minecraft')|Out-Null};'OK'`;try{await run('powershell.exe',['-NoProfile','-NonInteractive','-Command',script],{windowsHide:true,timeout:15000,maxBuffer:1024*1024});return {ok:true,message:'El router aceptó el mapeo UPnP. Comprueba la conexión desde fuera de tu red.'};}catch{fail('El router no permitió UPnP o el puerto está ocupado. Usa la regla TCP indicada en el configurador del router; no se cambió otro mapeo.',409);}}
  async function canDelete(r){
   if(r.legacy||r.id==='main')fail('El servidor original contiene el panel y no se puede eliminar desde aquí.',409);
@@ -172,10 +204,14 @@ function createServerManager({main,factory,codeDir,catalogProvider=catalogs,prob
   if(p==='/api/catalog/minecraft'&&req.method==='GET'){const data=await catalogProvider.minecraftVersions(url.searchParams.get('refresh')==='1');send(res,200,{...data,versions:data.versions.map(({url,...entry})=>entry)});return true;}
   if(p==='/api/catalog/loaders'&&req.method==='GET'){send(res,200,await catalogProvider.loaderVersions(url.searchParams.get('version'),url.searchParams.get('loader')));return true;}
   if(p==='/api/catalog/details'&&req.method==='GET'){const d=await catalogProvider.minecraftDetails(url.searchParams.get('version'));send(res,200,{version:d.id,javaMajor:d.javaVersion?.majorVersion||guessedJava(d.id),serverAvailable:true});return true;}
-  if(p==='/api/servers'&&req.method==='GET'){send(res,200,{servers:await Promise.all(records.map(async r=>({...publicRecord(r),online:await probe(r.serverPort)}))),suggestedPort:await allocate(25565),localAddresses:localAddresses(),physicalMemoryMb:Math.floor(os.totalmem()/1048576)});return true;}
+  if(p==='/api/servers'&&req.method==='GET'){send(res,200,{servers:await Promise.all(records.map(async r=>({...publicRecord(r),online:moved(r)?await nativeHosting.context().isOnline().catch(()=>false):await probe(r.serverPort)}))),suggestedPort:await allocate(25565),localAddresses:localAddresses(),physicalMemoryMb:Math.floor(os.totalmem()/1048576)});return true;}
   if(p==='/api/servers'&&req.method==='POST'){send(res,202,await create(await main.readJson(req)));return true;}
   const jobMatch=/^\/api\/server-jobs\/([0-9a-f-]{36})$/.exec(p);if(jobMatch&&req.method==='GET'){const j=jobs.get(jobMatch[1]);if(!j)fail('No se encuentra esa operación. Revisa el estado del servidor.',404);const r=records.find(r=>r.id===j.serverId);if(j.done&&j.ok&&r){const coverage=preconfiguredNetwork(codeDir,r,localAddresses());send(res,200,{...j,warnings:currentWarnings(j.warnings,coverage),phase:currentWarnings(j.warnings,coverage).length?'Servidor preparado · revisar conexión':'Servidor preparado',networkMessage:coverage.firewall&&coverage.router?'Puerto cubierto por las reglas manuales de Windows y del router. No necesita UPnP.':j.networkMessage});}else send(res,200,j);return true;}
   const match=/^\/api\/servers\/([^/]+)(?:\/(connection|network|firewall|upnp|platform|retry|delete-intent))?$/.exec(p);if(!match)return false;const r=record(match[1]),action=match[2];
+  if((moved(r)||travelling(r.id))&&req.method!=='GET')fail('Devuelve el servidor al equipo del panel para modificar su instalación.',409);
+  if(r.id===nativeHosting?.id&&(req.method==='DELETE'||action==='delete-intent'||(action==='connection'&&req.method==='PUT'))) {
+   fail('Este servidor está asociado a un perfil de traslado.',409);
+  }
   if(!action&&req.method==='GET'){send(res,200,{server:publicRecord(r),localAddresses:localAddresses()});return true;}
   if(action==='delete-intent'&&req.method==='POST'){send(res,200,await deleteIntent(r));return true;}
   if(!action&&req.method==='DELETE'){send(res,200,await deleteServer(r,await main.readJson(req)));return true;}
@@ -189,6 +225,14 @@ function createServerManager({main,factory,codeDir,catalogProvider=catalogs,prob
  }
  for(const r of records)if(!r.legacy)r.networkWarnings=currentWarnings(r.networkWarnings,preconfiguredNetwork(codeDir,r,localAddresses()));save();
  for(const r of records)if(r.id!=='main'&&r.status==='ready')instance(r.id);
- return {handle,instance,create,records:()=>records.map(publicRecord),close:()=>{for(const [id,i] of instances)if(id!=='main')i.close();}};
+ async function routedHandle(req,res,url){
+  const target=/^\/api\/servers\/([^/]+)/.exec(url.pathname)?.[1];
+  if(target&&target===nativeHosting?.id&&req.method!=='GET')return track(target,()=>handle(req,res,url));
+  return handle(req,res,url);
+ }
+ return {handle:routedHandle,instance,route,create,records:()=>records.map(publicRecord),hostingRecord:record,
+  hostingBusy:id=>busy.has(id)||activeRequests.has(id),
+  resetHostingInstance:id=>{instances.get(id)?.close();instances.delete(id);},
+  close:()=>{for(const [id,i] of instances)if(id!=='main')i.close();}};
 }
 module.exports={createServerManager,portNumber,hostName,prop,validId};

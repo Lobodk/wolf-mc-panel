@@ -26,13 +26,13 @@ const serveStaticFile = createStaticFiles(path.join(__dirname, 'public'));
 function createPanelInstance(options = {}) {
 const CODE_DIR = __dirname;
 const SERVER_DIR = options.serverDir || path.resolve(CODE_DIR, '..');
-const PANEL_DIR = path.join(SERVER_DIR, 'panel');
+const PANEL_DIR = options.panelDir || path.join(SERVER_DIR, 'panel');
 fs.mkdirSync(PANEL_DIR, { recursive: true });
 const RUNTIME_DIR = options.javaHome || path.join(SERVER_DIR, 'runtime');
 const PUBLIC_DIR = path.join(CODE_DIR, 'public');
 const MODS_DIR = path.join(SERVER_DIR, 'mods');
 const autoModpackStatus = createAutoModpackStatus(SERVER_DIR);
-const modStaging = createModStaging(SERVER_DIR);
+const modStaging = createModStaging(SERVER_DIR,PANEL_DIR);
 const bulkProgressContexts = new Map();
 let activeBulkUpdate = '';
 const LOG_FILE = path.join(SERVER_DIR, 'logs', 'latest.log');
@@ -102,11 +102,14 @@ function readOrCreateConfig() {
 }
 
 const config = readOrCreateConfig();
+const gameOnline = () => options.remote?.isOnline() ?? tcpOpen(options.record?.bindAddress || '127.0.0.1', config.serverPort);
 const networkMonitor = createNetworkMonitor({
   powershell: POWERSHELL_EXE,
   script: path.join(CODE_DIR, 'network-snapshot.ps1'),
   serverPort: config.serverPort,
   bridgeFile: path.join(PANEL_DIR, 'telemetry', 'network.json'),
+  hostLabel: options.remote ? 'PC de destino' : 'PC del panel',
+  readSample: options.remote ? async () => (await options.remote.metrics()).network : undefined,
 });
 
 function loadBackupConfig() {
@@ -278,9 +281,10 @@ function makeRconPacket(id, type, text) {
   return packet;
 }
 
-function rconCommand(command, timeoutMs = 5000) {
+async function rconCommand(command, timeoutMs = 5000) {
+  await options.remote?.ensure({files:false});
   return new Promise((resolve, reject) => {
-    const socket = net.createConnection({ host: config.rconHost, port: config.rconPort });
+    const socket = net.createConnection({ host: config.rconHost, port: options.remote?.rconPort || config.rconPort });
     const authId = crypto.randomInt(1, 0x3fffffff);
     const commandId = authId + 1;
     let stage = 'auth';
@@ -299,6 +303,7 @@ function rconCommand(command, timeoutMs = 5000) {
     const timer = setTimeout(() => finish(new Error('RCON no respondió a tiempo.')), timeoutMs);
     socket.setTimeout(timeoutMs, () => finish(new Error('RCON agotó el tiempo de espera.')));
     socket.on('error', (error) => finish(error));
+    socket.on('end', () => finish(new Error('Minecraft cerró la conexión RCON.')));
     socket.on('connect', () => {
       socket.write(makeRconPacket(authId, 3, config.rconPassword));
     });
@@ -676,7 +681,7 @@ async function createServerBackup(kind) {
   }
   if (!include.includes('world') && kind !== 'platform') throw new Error('No existe la carpeta world del servidor; no se ha creado la copia.');
   let saveDisabled = false;
-  if (await tcpOpen(options.record?.bindAddress || '127.0.0.1', config.serverPort)) {
+  if (await gameOnline()) {
     const announcement = kind === 'manual'
       ? 'Realizando copia manual del servidor'
       : kind === 'automatica'
@@ -696,10 +701,11 @@ async function createServerBackup(kind) {
       throw new Error('No se pudo congelar y guardar el mundo por RCON; no he creado la copia para evitar un ZIP inconsistente. ' + error.message);
     }
   }
+  if (options.remote && !saveDisabled) await options.remote.confirmStopped();
   try {
     const zipArgs = ['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(CODE_DIR,'backup-zip.ps1'),'-Action','Create','-Archive',partialPath,'-SourceRoot',SERVER_DIR,'-EntriesJson',JSON.stringify(include)];
     await execFileAsync(POWERSHELL_EXE, zipArgs, {
-      cwd: SERVER_DIR,
+      cwd: options.remote ? CODE_DIR : SERVER_DIR,
       timeout: 30 * 60 * 1000,
       windowsHide: true,
       maxBuffer: 1024 * 1024,
@@ -1874,14 +1880,28 @@ async function getPerformanceSnapshot() {
   const escapedServerDir = SERVER_DIR.replace(/'/g, "''");
   const psCommand = `$serverDir = '${escapedServerDir}'; $os = Get-CimInstance Win32_OperatingSystem; $serverProcess = Get-CimInstance Win32_Process -Filter "Name='java.exe'" | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($serverDir) } | Select-Object -First 1; if (-not $serverProcess) { [pscustomobject]@{ running=$false; totalMemoryBytes=[double]($os.TotalVisibleMemorySize * 1024); freeMemoryBytes=[double]($os.FreePhysicalMemory * 1024); logicalProcessors=[int][Environment]::ProcessorCount } | ConvertTo-Json -Compress; exit 0 }; $p = Get-Process -Id $serverProcess.ProcessId; [pscustomobject]@{ running=$true; pid=$p.Id; workingSetBytes=[double]$p.WorkingSet64; privateBytes=[double]$p.PrivateMemorySize64; cpuSeconds=[double]$p.CPU; startedAt=$p.StartTime.ToUniversalTime().ToString('o'); totalMemoryBytes=[double]($os.TotalVisibleMemorySize * 1024); freeMemoryBytes=[double]($os.FreePhysicalMemory * 1024); logicalProcessors=[int][Environment]::ProcessorCount } | ConvertTo-Json -Compress`;
 
-  const { stdout } = await execFileAsync(
-    POWERSHELL_EXE,
-    ['-NoProfile', '-NonInteractive', '-Command', psCommand],
-    { timeout: 5000, windowsHide: true, maxBuffer: 64 * 1024 },
-  );
-  const processInfo = JSON.parse(stdout.trim());
+  let processInfo, telemetryError='', needsTelemetryUpdate=false;
+  if (options.remote) {
+    try { processInfo=(await options.remote.metrics()).metrics; }
+    catch(error) {
+      telemetryError=error.message;
+      needsTelemetryUpdate=Boolean(error.needsTelemetryUpdate);
+      const state=await options.remote.gameState().catch(()=>null);
+      processInfo={running:state?state.running:null};
+    }
+  } else {
+    const { stdout } = await execFileAsync(
+      POWERSHELL_EXE,
+      ['-NoProfile', '-NonInteractive', '-Command', psCommand],
+      { timeout: 5000, windowsHide: true, maxBuffer: 64 * 1024 },
+    );
+    processInfo=JSON.parse(stdout.trim());
+  }
   const base = {
-    running: Boolean(processInfo.running),
+    running: processInfo.running==null?null:Boolean(processInfo.running),
+    hostLabel: options.remote?'PC de destino':'PC del panel',
+    telemetryError,
+    needsTelemetryUpdate,
     heapMinBytes,
     heapMaxBytes,
     totalMemoryBytes: processInfo.totalMemoryBytes || 0,
@@ -1892,31 +1912,32 @@ async function getPerformanceSnapshot() {
     sampledAt: new Date().toISOString(),
   };
 
-  if (!processInfo.running) {
+  if (!processInfo.running || !processInfo.pid) {
     cpuSample = null;
     performanceCache = { at: now, data: base };
     return base;
   }
 
+  const sampledAt=processInfo.sampledAt||now;
   let cpuPercent = null;
   const cpuSeconds = Number(processInfo.cpuSeconds);
   const processorCount = Math.max(1, Number(processInfo.logicalProcessors) || 1);
-  if (cpuSample && cpuSample.pid === processInfo.pid && now > cpuSample.at) {
-    const elapsedSeconds = (now - cpuSample.at) / 1000;
+  if (cpuSample && cpuSample.pid === processInfo.pid && sampledAt===cpuSample.at) {
+    cpuPercent=cpuSample.percent;
+  } else if (cpuSample && cpuSample.pid === processInfo.pid && sampledAt>cpuSample.at && cpuSeconds>=cpuSample.cpuSeconds) {
+    const elapsedSeconds = (sampledAt - cpuSample.at) / 1000;
     cpuPercent = Math.max(0, Math.min(100,
       ((cpuSeconds - cpuSample.cpuSeconds) / elapsedSeconds / processorCount) * 100,
     ));
   }
-  cpuSample = { pid: processInfo.pid, cpuSeconds, at: now };
+  cpuSample = { pid: processInfo.pid, cpuSeconds, at: sampledAt, percent:cpuPercent };
 
   let heap = null;
   try {
-    const { stdout: jstatOutput } = await execFileAsync(
-      JVM_STATS_FILE,
-      ['-gc', String(processInfo.pid)],
-      { timeout: 4000, windowsHide: true, maxBuffer: 64 * 1024 },
-    );
-    heap = parseJstatHeap(jstatOutput);
+    const jstatOutput=options.remote?processInfo.jstat:
+      (await execFileAsync(JVM_STATS_FILE,['-gc',String(processInfo.pid)],
+        {timeout:4000,windowsHide:true,maxBuffer:64*1024})).stdout;
+    if(typeof jstatOutput==='string')heap=parseJstatHeap(jstatOutput);
   } catch {}
 
   const startedAt = new Date(processInfo.startedAt);
@@ -1937,8 +1958,15 @@ async function getPerformanceSnapshot() {
 
 async function readLogs() {
   try {
-    const file = await fsp.access(LOG_FILE).then(() => LOG_FILE).catch(() => path.join(PANEL_DIR, 'process.log'));
-    const stat = await fsp.stat(file);
+    const candidates=options.remote?[LOG_FILE,path.join(SERVER_DIR,'logs','wolf-launch-error.log'),
+      path.join(SERVER_DIR,'logs','wolf-launch.log'),path.join(SERVER_DIR,'.wolfmc-task-launch.log')]:
+      [LOG_FILE,path.join(PANEL_DIR,'process.log')];
+    const available=(await Promise.all(candidates.map(async file=>{
+      try{const stat=await fsp.stat(file);return stat.size?{file,stat}:null;}catch{return null;}
+    }))).filter(Boolean);
+    if(!available.length)return [];
+    if(options.remote)available.sort((a,b)=>b.stat.mtimeMs-a.stat.mtimeMs);
+    const {file,stat}=available[0];
     const start = Math.max(0, stat.size - 1024 * 1024);
     const chunks = [];
     for await (const chunk of fs.createReadStream(file, { start })) chunks.push(chunk);
@@ -1981,10 +2009,11 @@ async function waitUntil(predicate, timeoutMs, message) {
   throw new Error(message);
 }
 
-async function launchServer() {
-  if (await tcpOpen(options.record?.bindAddress || '127.0.0.1', config.serverPort)) throw new Error('Minecraft sigue encendido.');
+async function launchServer(handoff = false) {
+  if (await gameOnline()) throw new Error('Minecraft sigue encendido.');
+  await options.remote?.confirmStopped();
   modStaging.apply();
-  if (options.launch) { managedServerProcess = await options.launch(); return; }
+  if (options.launch) { managedServerProcess = await options.launch(handoff); return; }
   if (managedServerProcess && managedServerProcess.exitCode === null) {
     managedServerProcess.kill();
   }
@@ -2036,7 +2065,7 @@ async function handleApi(req, res, url) {
   if (await itemCatalog.handle(req, res, url, { sendJson })) return;
 
   if (req.method === 'GET' && pathname === '/api/status') {
-    const localPortOpen = await tcpOpen(options.record?.bindAddress || '127.0.0.1', config.serverPort);
+    const localPortOpen = await gameOnline();
     try {
       const players = await rconCommand('list');
       return sendJson(res, 200, {
@@ -2101,6 +2130,7 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === 'POST' && pathname === '/api/backups/restore') {
+    if (options.remote) return sendJson(res,409,{error:'Devuelve el servidor al equipo del panel para restaurar un ZIP.'});
     if (maintenanceLock) return sendJson(res, 409, { error: 'Espera a que termine la operación actual antes de restaurar.' });
     if (backupRunning || backupQueued > 0) return sendJson(res, 409, { error: 'Espera a que terminen las copias en curso antes de restaurar.' });
     const data = await readJson(req);
@@ -2448,23 +2478,24 @@ async function handleApi(req, res, url) {
 }
 
 async function restartManagedServer() {
-if (maintenanceLock || options.externalBusy?.()) throw Object.assign(new Error('Espera a que termine la actualización antes de iniciar o reiniciar Minecraft.'), {status:409});
+if (maintenanceLock || backupRunning || backupQueued || options.externalBusy?.()) throw Object.assign(new Error('Espera a que termine el mantenimiento o la copia antes de iniciar o reiniciar Minecraft.'), {status:409});
     maintenanceLock = 'server-restart';
     try {
-    if (!(await tcpOpen(options.record?.bindAddress || '127.0.0.1', config.serverPort))) {
+    if (!(await gameOnline())) {
       await launchServer();
     } else {
       let oldPid = 0;
       try { oldPid = Number(JSON.parse(await fsp.readFile(path.join(PANEL_DIR, 'telemetry', 'network.json'), 'utf8')).pid) || 0; } catch {}
       if (!oldPid) { try { oldPid = Number(JSON.parse(await fsp.readFile(path.join(PANEL_DIR, 'managed-process.json'), 'utf8')).pid) || 0; } catch {} }
-      const oldProcessAlive = () => {
+      const oldProcessAlive = async () => {
+        if(options.remote) { try { await options.remote.confirmStopped(); return false; } catch { return true; } }
         if (!oldPid) return false;
         try { process.kill(oldPid, 0); return true; } catch (error) { return error.code !== 'ESRCH'; }
       };
       await rconCommand('save-all', 10000);
       await rconCommand('stop', 5000).catch(() => '');
       await waitUntil(
-        async () => !(await tcpOpen(options.record?.bindAddress || '127.0.0.1', config.serverPort)) && !oldProcessAlive(),
+        async () => !(await gameOnline()) && !(await oldProcessAlive()),
         45000,
         'El servidor no terminó de apagarse en 45 segundos.',
       );
@@ -2491,9 +2522,9 @@ if (maintenanceLock || options.externalBusy?.()) throw Object.assign(new Error('
 
 const staticFile = (res, pathname, req) => serveStaticFile(res, pathname, req, sendJson);
 
-const itemCatalog = createItemCatalog({ serverDir: SERVER_DIR, minecraftVersion: CURSEFORGE_MC_VERSION });
+const itemCatalog = createItemCatalog({ serverDir: SERVER_DIR, panelDir:PANEL_DIR, minecraftVersion: CURSEFORGE_MC_VERSION });
 const playerTools = createPlayerTools({
-  serverDir: SERVER_DIR,
+  serverDir: SERVER_DIR, panelDir:PANEL_DIR,
   rcon: rconCommand,
   onlineNames: async () => parseOnlinePlayers(await rconCommand('list')),
   canMutate: () => !maintenanceLock && !options.externalBusy?.(),
@@ -2504,9 +2535,20 @@ const playerTools = createPlayerTools({
   modernCommands: !options.record || /^26\./.test(CURSEFORGE_MC_VERSION),
 });
 
-const serverFeatures = createServerFeatures({serverDir: SERVER_DIR, rcon:rconCommand, restart:restartManagedServer, online:()=>tcpOpen(options.record?.bindAddress || '127.0.0.1',config.serverPort), isBusy:()=>Boolean(maintenanceLock || backupRunning || backupQueued || options.externalBusy?.()), autoModpack:autoModpackStatus});
+const serverFeatures = createServerFeatures({serverDir: SERVER_DIR, panelDir:PANEL_DIR, rcon:rconCommand, restart:restartManagedServer, online:gameOnline, isBusy:()=>Boolean(maintenanceLock || backupRunning || backupQueued || options.externalBusy?.()), autoModpack:autoModpackStatus});
 
-return { config, handleApi, staticFile, sendJson, readJson, isLanAddress, constantTimeTokenMatch,
+async function startIfStopped(handoff=false) {
+  if(maintenanceLock||(options.externalBusy?.()&&!(handoff&&options.allowsHandoff?.())))throw new Error('Hay una operación activa.');
+  maintenanceLock='server-start';
+  try{
+    if(await gameOnline())return false;
+    await launchServer(handoff);
+    return true;
+  }finally{maintenanceLock='';}
+}
+
+return { config, handleApi, staticFile, sendJson, readJson, isLanAddress, constantTimeTokenMatch, startIfStopped,
+  hostingCommand:rconCommand,applyHostingMods:()=>modStaging.apply(),
   isBusy: () => Boolean(maintenanceLock || backupRunning || backupQueued || serverFeatures.isBusy()), backup: () => enqueueBackup('platform'),
   close: () => { networkMonitor.stop(); playerTools.close(); serverFeatures.close(); clearInterval(backupScheduler); } };
 }

@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
 const root=path.resolve(__dirname,'..'),directories=['src','scripts','installer','tests','docs','assets','.github'];
-const forbiddenNames=/^(?:auth|hosting|preferences|installation|address|panel-config|curseforge-config|curseforge-mods|servers|backup-config|network-preconfiguration|managed-process|player-tools-state)\.json$|^(?:panel-access|ACCESS-KEY)\.txt$|\.(?:pem|pfx|key|log)$/i;
+const forbiddenNames=/^(?:auth|hosting|preferences|installation|address|panel-config|curseforge-config|curseforge-mods|servers|backup-config|network-preconfiguration|managed-process|player-tools-state|migration-profile|peer|pairing|ownership|last-job|Vinculacion-WolfMC-Windows)\.json$|^(?:(?:panel-access|ACCESS-KEY)\.txt|smb-credential\.xml|id_ed25519(?:\.pub)?|known_hosts)$|\.(?:pem|pfx|key|log)$/i;
 let files=0;const errors=[];
 function inspect(directory){if(!fs.existsSync(directory))return;for(const entry of fs.readdirSync(directory,{withFileTypes:true})){
  const file=path.join(directory,entry.name),relative=path.relative(root,file);

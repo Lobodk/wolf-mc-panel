@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0 — 2026-11-26
+
+- Download a single setup tool from the panel to pair another Windows PC on your local network.
+- Move a managed Minecraft server between the two PCs from the panel, with incremental transfer, file verification, and live progress. Each move transfers the world, mods, and settings together.
+- Manage the active server through the same panel from either PC. Remote hosting uses Windows OpenSSH, encrypted SMB, and Task Scheduler.
+
 ## 1.0.8 — 2026-11-25
 
 - Group server sections in a single scrollable navigation area and separate panel help and recovery.

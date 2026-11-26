@@ -4,6 +4,7 @@ const {createHosting,loopback}=require('./hosting.cjs');
 const {executable,startProxy}=require('./proxy.cjs');
 const {createAuth}=require('./auth.cjs');
 const {defaultDataDir}=require('./paths.cjs');
+const {createMigration}=require('./panel/migration.cjs');
 const PRODUCT='Wolf MC Panel',VERSION=require('../package.json').version;
 async function start({dataDir=defaultDataDir(),port=Number(process.env.WOLF_PANEL_PORT||process.env.LOBO_PANEL_PORT)||8787,legacy=null}={}){
  if(process.platform!=='win32'&&!process.env.LOBO_PANEL_FIXTURE)throw Error('Esta versión requiere Windows x64.');
@@ -21,8 +22,10 @@ async function start({dataDir=defaultDataDir(),port=Number(process.env.WOLF_PANE
  const createServerManager=legacy?.createServerManager||require('./panel/server-manager').createServerManager;
  const validateIcon=legacy?.validateIcon||require('./panel/server-features').validateIcon;
  const main=legacy?createPanelInstance():createPanelInstance({serverDir:control,appDataDir:dataDir});
- const manager=legacy?createServerManager({main,factory:createPanelInstance,codeDir:legacy.codeDir}):createServerManager({main,factory:createPanelInstance,codeDir:path.join(__dirname,'panel'),dataDir,includeLegacy:false});
- let auth;try{auth=createAuth({dataDir,initialKey:main.config.panelToken,secureCookies:hosting.current.mode==='domain',cookieName:'wolf_session_'+instanceId.replaceAll('-','').slice(0,12)});}catch(error){manager.close();main.close();throw error;}
+ const migration=process.platform==='win32'&&!legacy?createMigration(dataDir):null;
+ const manager=legacy?createServerManager({main,factory:createPanelInstance,codeDir:legacy.codeDir}):createServerManager({main,factory:createPanelInstance,codeDir:path.join(__dirname,'panel'),dataDir,includeLegacy:false,nativeHosting:migration});
+ migration?.attach(manager);
+ let auth;try{auth=createAuth({dataDir,initialKey:main.config.panelToken,secureCookies:hosting.current.mode==='domain',cookieName:'wolf_session_'+instanceId.replaceAll('-','').slice(0,12)});}catch(error){migration?.close();manager.close();main.close();throw error;}
  const proxyFile=executable(legacy);let proxy=null;
  const attempts=new Map();let closed=false;
  function rateLimit(req){if(attempts.size>2048)attempts.delete(attempts.keys().next().value);const key=req.panelClient||req.socket.remoteAddress,record=attempts.get(key)||{count:0,until:Date.now()+60000};if(record.until<Date.now()){record.count=0;record.until=Date.now()+60000;}if(record.count>=10){const error=Error('Demasiados intentos. Espera un minuto.');error.status=429;throw error;}record.count++;attempts.set(key,record);}
@@ -51,6 +54,11 @@ async function start({dataDir=defaultDataDir(),port=Number(process.env.WOLF_PANE
     if(url.pathname==='/api/app/onboarding'&&req.method==='GET')return send(res,200,{seen:prefs.onboardingSeen===true});
     if(url.pathname==='/api/app/onboarding'&&req.method==='POST'){if(prefs.onboardingSeen!==true){const next={...prefs,onboardingSeen:true};write(prefsFile,next);prefs=next;}return send(res,200,{ok:true,seen:true});}
     if(url.pathname==='/api/app/session'&&req.method==='GET')return send(res,200,{ok:true,passwordConfigured:auth.configured(),instanceId});
+    if(url.pathname==='/api/app/native-hosting'||url.pathname.startsWith('/api/app/native-hosting/')){
+     if(!migration)return send(res,404,{error:'El traslado requiere una instalación Windows de Wolf MC Panel.'});
+     if(!loopback(req.socket.remoteAddress)&&(hosting.current.mode!=='lan'||!main.isLanAddress(req.socket.remoteAddress)))return send(res,403,{error:'El traslado se administra desde la red local.'});
+     return await migration.handle(req,res,url,main);
+    }
     if(url.pathname==='/api/app/password'&&req.method==='PUT'){rateLimit(req);const data=await main.readJson(req);await auth.change(data.current,data.password,res);return send(res,200,{ok:true,passwordConfigured:true,message:'Contraseña guardada localmente. La clave inicial ya no permite iniciar sesión.'});}
     // Child instances share the internal key; it never leaves the backend.
     req.headers.authorization='Bearer '+main.config.panelToken;
@@ -65,25 +73,25 @@ async function start({dataDir=defaultDataDir(),port=Number(process.env.WOLF_PANE
     }
     if((url.pathname==='/api/app/shutdown'||url.pathname==='/api/app/local-shutdown')&&req.method==='POST'){
      const records=manager.records();
-     if(records.some(r=>r.busy))return send(res,409,{error:'Hay una operación activa. Espera a que termine.'});
+     if(migration?.busy()||records.some(r=>r.busy))return send(res,409,{error:'Hay una operación activa. Espera a que termine.'});
      // Preserve running Minecraft processes; shutting this panel never deletes worlds.
      send(res,200,{ok:true,message:'Cerrando el panel. Los servidores de Minecraft no se apagan con esta acción.'});setImmediate(()=>close());return;
     }
     if(await manager.handle(req,res,url))return;
     const id=req.headers['x-server-id']||(legacy?'main':'');if(typeof id!=='string'||!id||id==='main'&&!legacy)return send(res,400,{error:'Selecciona un servidor creado en esta instalación.'});
-    return await manager.instance(id).handleApi(req,res,url);
+    return id===migration?.id?await manager.route(id,req,res,url):await manager.instance(id).handleApi(req,res,url);
    }
    if(req.method==='GET')return main.staticFile(res,url.pathname,req);
    return send(res,405,{error:'Método no permitido.'});
   }catch(error){if(!res.headersSent)send(res,error.status||500,{error:error.message||'No se pudo completar la operación.'});else res.destroy();}
  });
- async function close(){if(closed)return;closed=true;proxy?.close();manager.close();main.close();await new Promise(resolve=>server.close(resolve));}
+ async function close(){if(closed)return;closed=true;proxy?.close();migration?.close();manager.close();main.close();await new Promise(resolve=>server.close(resolve));}
  let lastError;
  for(let offset=0;offset<20;offset++){
   try{await new Promise((resolve,reject)=>{const failed=error=>{server.off('listening',ready);reject(error);},ready=()=>{server.off('error',failed);resolve();};server.once('error',failed);server.once('listening',ready);server.listen(port+offset,hosting.bindHost);});lastError=null;break;}
   catch(error){lastError=error;if(error.code!=='EADDRINUSE')break;}
  }
- if(lastError){manager.close();main.close();throw lastError;}
+ if(lastError){migration?.close();manager.close();main.close();throw lastError;}
  if(hosting.current.mode==='domain'&&hosting.current.managedProxy){try{proxy=await startProxy({file:proxyFile,dataDir,caddyfile:hosting.caddy(hosting.current,server.address().port)});}catch(error){await close();throw error;}}
  const address={publicUrl:hosting.current.origin||'',port:server.address().port,url:'http://127.0.0.1:'+server.address().port+'/',instanceId,pid:process.pid,version:VERSION};
  write(path.join(dataDir,'address.json'),address);

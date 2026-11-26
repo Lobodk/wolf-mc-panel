@@ -1,4 +1,4 @@
-param([int]$MinecraftPort = 25565)
+param([int]$MinecraftPort = 25565, [string]$AdapterAddress = '')
 $ErrorActionPreference = 'Stop'
 function Get-PingSample([string]$Address) {
     $probe = [System.Net.NetworkInformation.Ping]::new()
@@ -12,7 +12,11 @@ $interfaces = @([System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkI
     $_.OperationalStatus -eq 'Up' -and $_.NetworkInterfaceType -ne 'Loopback' -and
     @($_.GetIPProperties().GatewayAddresses | Where-Object { $_.Address.AddressFamily -eq 'InterNetwork' -and $_.Address.ToString() -ne '0.0.0.0' }).Count -gt 0
 })
-$nic = $interfaces | Sort-Object Speed -Descending | Select-Object -First 1
+$nic = if ($AdapterAddress) {
+    $interfaces | Where-Object { @($_.GetIPProperties().UnicastAddresses | ForEach-Object {$_.Address.ToString()}) -contains $AdapterAddress } | Select-Object -First 1
+} else {
+    $interfaces | Sort-Object Speed -Descending | Select-Object -First 1
+}
 $global = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
 $tcp = $global.GetTcpIPv4Statistics()
 $connections = @($global.GetActiveTcpConnections() | Where-Object { $_.LocalEndPoint.Port -eq $MinecraftPort -and $_.State -eq 'Established' }).Count
