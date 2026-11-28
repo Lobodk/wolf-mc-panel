@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.2 — 2026-11-28
 
 - Rename servers from their cards and see the current server name in Overview.
 - Clone servers with a fresh world or regenerate a stopped server after two confirmations, archiving its previous world.
