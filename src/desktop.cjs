@@ -6,6 +6,14 @@ const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function running(){try{const a=JSON.parse(fs.readFileSync(path.join(dataDir,'address.json'))),id=JSON.parse(fs.readFileSync(path.join(dataDir,'installation.json'))).id;if(!Number.isInteger(a.port)||a.port<1024||a.port>65535)return null;const r=await fetch('http://127.0.0.1:'+a.port+'/api/app/health',{signal:AbortSignal.timeout(1500)}),d=await r.json();return d.product==='Wolf MC Panel'&&d.instanceId===id?{...a,url:'http://127.0.0.1:'+a.port+'/'}:null;}catch{return null;}}
 function open(file){const child=spawn('rundll32.exe',['url.dll,FileProtocolHandler',file],{detached:true,windowsHide:true,stdio:'ignore'});child.on('error',()=>{});child.unref();}
 (async()=>{
+ const autoStart=process.argv.includes('--start-configured-server');
+ if(autoStart){
+  const records=await fs.promises.readFile(path.join(dataDir,'servers.json'),'utf8').then(JSON.parse).catch(error=>{
+   if(error.code==='ENOENT')return [];
+   throw error;
+  });
+  if(!records.some(record=>record.autoStart===true&&!record.legacy&&record.status==='ready'))return;
+ }
  let app=await running();
  async function stopApp(){
   if(!app)return;const cfg=JSON.parse(fs.readFileSync(path.join(dataDir,'control/panel/panel-config.json')));
@@ -21,10 +29,10 @@ function open(file){const child=spawn('rundll32.exe',['url.dll,FileProtocolHandl
  if(process.argv.includes('--local')){await stopApp();fs.writeFileSync(path.join(dataDir,'hosting.json'),JSON.stringify({mode:'local',lanNames:[]}));app=null;}
  if(!app){
   const stdout=fs.openSync(path.join(dataDir,'app.log'),'a'),stderr=fs.openSync(path.join(dataDir,'errors.log'),'a');
-  const child=spawn(process.execPath,[path.join(__dirname,'main.cjs')],{env:{...process.env,LOBO_PANEL_DATA:dataDir},cwd:path.dirname(__dirname),detached:true,windowsHide:true,stdio:['ignore',stdout,stderr]});child.unref();fs.closeSync(stdout);fs.closeSync(stderr);
+  const child=spawn(process.execPath,[path.join(__dirname,'main.cjs'),...(autoStart?['--start-configured-server']:[])],{env:{...process.env,LOBO_PANEL_DATA:dataDir},cwd:path.dirname(__dirname),detached:true,windowsHide:true,stdio:['ignore',stdout,stderr]});child.unref();fs.closeSync(stdout);fs.closeSync(stderr);
   for(let i=0;i<60&&!app;i++){await delay(500);app=await running();}if(!app)throw Error('No se pudo iniciar el panel. Revisa errors.log en la carpeta de datos.');
  }
- if(!process.argv.includes('--no-browser')){
+ if(!autoStart&&!process.argv.includes('--no-browser')){
   open(app.publicUrl||app.url);
   const marker=path.join(dataDir,'access-shown');if(!fs.existsSync(marker)){open(path.join(dataDir,'ACCESS-KEY.txt'));fs.writeFileSync(marker,'The access file was opened on first launch.');}
  }

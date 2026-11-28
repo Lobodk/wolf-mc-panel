@@ -52,6 +52,7 @@ Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\package.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\THIRD-PARTY-NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
+Name: "{userstartup}\Wolf MC Panel"; Filename: "{app}\WolfMCPanel.exe"; Parameters: "--start-configured-server --no-browser"
 Name: "{group}\Wolf MC Panel"; Filename: "{app}\WolfMCPanel.exe"
 Name: "{group}\Detener panel"; Filename: "{app}\WolfMCPanel.exe"; Parameters: "--stop"
 Name: "{group}\Recuperar acceso local"; Filename: "{app}\WolfMCPanel.exe"; Parameters: "--local"

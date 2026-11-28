@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Rename servers from their cards and see the current server name in Overview.
+- Clone servers with a fresh world or regenerate a stopped server after two confirmations, archiving its previous world.
+- Select a single server to start at Windows sign-in.
+- Refresh the English server-management screenshots.
+
 ## 1.1.1 — 2026-11-26
 
 - Refresh the panel with the stone theme and an updated English screenshot gallery.

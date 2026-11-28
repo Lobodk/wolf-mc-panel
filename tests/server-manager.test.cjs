@@ -68,3 +68,42 @@ test('Recovery refuses a junction outside its managed folder and preserves the s
  }finally{f.cleanup();}
 });
 test('Archived servers restore with a chosen free port, separate RCON, all world files and no automatic launch',async()=>{const f=fixture();try{const created=await f.manager.create(f.data);await f.finish(created.jobId);const id=created.server.id;const before=JSON.parse(fs.readFileSync(path.join(f.codeDir,'servers.json'))).find(r=>r.id===id);fs.mkdirSync(path.join(before.directory,'world'));fs.writeFileSync(path.join(before.directory,'world/keep'),'SAVE');const token=(await f.request('/api/servers/'+id+'/delete-intent','POST',{})).data.token;await f.request('/api/servers/'+id,'DELETE',{token,name:f.data.name});const archive=(await f.request('/api/deleted-servers')).data.servers[0];assert.equal(archive.id,id);await assert.rejects(f.request('/api/deleted-servers/'+archive.key+'/restore','POST',{serverPort:25565}),/reservado/);const result=await f.request('/api/deleted-servers/'+archive.key+'/restore','POST',{serverPort:25568});assert.equal(result.data.server.serverPort,25568);assert.equal(fs.readFileSync(path.join(before.directory,'world/keep'),'utf8'),'SAVE');const after=JSON.parse(fs.readFileSync(path.join(f.codeDir,'servers.json'))).find(r=>r.id===id),cfg=JSON.parse(fs.readFileSync(path.join(after.directory,'panel/panel-config.json')));assert.equal(cfg.serverPort,25568);assert.notEqual(cfg.rconPort,cfg.serverPort);assert.equal(JSON.parse(fs.readFileSync(path.join(after.directory,'panel/managed-process.json'))).pid,0);assert.equal((await f.request('/api/deleted-servers')).data.servers.length,0);await assert.rejects(f.request('/api/deleted-servers/../../evil/restore','POST',{}));}finally{f.cleanup();}});
+
+test('Clone and regeneration preserve quest definitions while keeping previous player progress recoverable', async () => {
+ const f=fixture();
+ try {
+  const created=await f.manager.create(f.data);
+  assert.equal((await f.finish(created.jobId)).ok,true);
+  const id=created.server.id, route='/api/servers/'+id;
+  const source=JSON.parse(fs.readFileSync(path.join(f.codeDir,'servers.json'))).find(r=>r.id===id);
+  const put=(rel,content)=>{
+   const file=path.join(source.directory,rel);
+   fs.mkdirSync(path.dirname(file),{recursive:true});
+   fs.writeFileSync(file,content);
+  };
+  put('panel/registry-agent.properties','port='+source.rconPort);
+  put('config/ftbquests/quests/data.snbt','quest definitions');
+  put('world/datapacks/fixture.zip','datapack');
+  put('world/level.dat','world');
+  put('world/ftbquests/progress.snbt','progress');
+  assert.equal((await f.request(route+'/autostart','PUT',{enabled:true})).data.autoStartId,id);
+  const clone=(await f.request(route+'/clone','POST',{name:'Fresh start'})).data.server;
+  assert.equal(clone.autoStart,false);
+  assert.notEqual(clone.serverPort,source.serverPort);
+  const copy=JSON.parse(fs.readFileSync(path.join(f.codeDir,'servers.json'))).find(r=>r.id===clone.id);
+  assert.equal(fs.readFileSync(path.join(copy.directory,'config/ftbquests/quests/data.snbt'),'utf8'),'quest definitions');
+  assert.equal(fs.existsSync(path.join(copy.directory,'world/ftbquests/progress.snbt')),false);
+  assert.equal(fs.existsSync(path.join(source.directory,'world/level.dat')),true);
+  assert.equal((await f.request('/api/servers/'+clone.id+'/autostart','PUT',{enabled:true})).data.autoStartId,clone.id);
+  assert.deepEqual(f.manager.records().filter(server=>server.autoStart).map(server=>server.id),[clone.id]);
+  assert.equal((await f.request(route+'/name','PUT',{name:'Renamed'})).data.server.name,'Renamed');
+  const intent=(await f.request(route+'/reset-world-intent','POST',{})).data;
+  await assert.rejects(f.request(route+'/reset-world','POST',intent),/contraseña/);
+  const result={};
+  await f.manager.handle({method:'POST',verifiedWorldReset:intent},result,new URL(route+'/reset-world','http://fixture'));
+  assert.equal(result.status,200);
+  assert.equal(fs.readFileSync(path.join(result.data.archive,'world/ftbquests/progress.snbt'),'utf8'),'progress');
+  assert.equal(fs.existsSync(path.join(source.directory,'world/level.dat')),false);
+  assert.equal(fs.readFileSync(path.join(source.directory,'world/datapacks/fixture.zip'),'utf8'),'datapack');
+ } finally { f.cleanup(); }
+});

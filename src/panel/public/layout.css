@@ -458,3 +458,11 @@ body {background:radial-gradient(ellipse at 90% 0,#294c6638,transparent 58%),lin
   .voxel-panel .overview-player-list {grid-template-columns:minmax(0,1fr)}
   .voxel-panel .overview-stats .stat-card strong {font-size:20px}
 }
+
+.server-card-name{min-width:0;display:flex;align-items:center;gap:9px}
+.server-card-name h3{margin:0;overflow-wrap:anywhere}
+.server-card-icon{flex:none;image-rendering:pixelated;border-radius:4px}
+.server-card-name .server-name-edit{flex:none;display:inline-grid;place-items:center;width:32px;height:32px;padding:0;color:var(--text)}
+.server-card .section-title>.count-pill{flex:none}
+
+#overviewServerName{overflow-wrap:anywhere}

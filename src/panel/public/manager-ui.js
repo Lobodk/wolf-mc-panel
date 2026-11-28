@@ -1,6 +1,7 @@
 'use strict';
 (() => {
  const el=id=>document.getElementById(id),make=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
+ const tr=text=>window.WolfI18n?.t(text)||text;
  let cardsSignature='',homeTimer=null,loading=false,inventory=null,versions=null,step=1,editing=null,connectionId=null,compatible=false,compatGeneration=0,watching=false;
  const loaderName=l=>({vanilla:'Vanilla',neoforge:'NeoForge',forge:'Forge',fabric:'Fabric'})[l]||l;
  function home(){location.assign('/');}
@@ -18,18 +19,90 @@
    cardsSignature='';await loadHome();showToast(result.message);
   }catch(error){showToast(error.message,true);}
  }
+ function showRename(server){
+  const dialog=el('renameServerDialog'),form=el('renameServerForm'),name=el('renameServerName');
+  const error=el('renameServerError'),submit=el('renameServerSubmit'),cancel=el('renameServerCancel');
+  name.value=server.name;error.textContent='';
+  cancel.onclick=()=>dialog.close();
+  dialog.oncancel=event=>{if(submit.disabled)event.preventDefault();};
+  form.onsubmit=async event=>{
+   event.preventDefault();submit.disabled=true;cancel.disabled=true;error.textContent='';
+   try{
+    await api('/api/servers/'+encodeURIComponent(server.id)+'/name',{method:'PUT',body:JSON.stringify({name:name.value})});
+    dialog.close();cardsSignature='';await loadHome();showToast('Nombre actualizado.');
+   }catch(e){error.textContent=e.message;}finally{submit.disabled=false;cancel.disabled=false;}
+  };
+  dialog.showModal();name.select();
+ }
+ async function toggleAutoStart(server,button){
+  button.disabled=true;
+  try{
+   await api('/api/servers/'+encodeURIComponent(server.id)+'/autostart',{method:'PUT',body:JSON.stringify({enabled:!server.autoStart})});
+   cardsSignature='';await loadHome();
+   showToast(server.autoStart?'Arranque automático desactivado.':'Arranque automático asignado a '+server.name+'.');
+  }catch(error){showToast(error.message,true);}finally{button.disabled=false;}
+ }
+ async function cloneServer(server,button){
+  const name=window.prompt(tr('Nombre del clon. Se copiarán los mods y ajustes y se generará un mundo nuevo.'),(server.name+' - Nuevo comienzo').slice(0,80));
+  if(!name?.trim())return;
+  button.disabled=true;
+  try{
+   showToast('Copiando la instalación del servidor…');
+   const result=await api('/api/servers/'+server.id+'/clone',{method:'POST',body:JSON.stringify({name})});
+   cardsSignature='';showToast(result.message);await loadHome();
+  }catch(error){showToast(error.message,true);}finally{button.disabled=false;}
+ }
+ async function regenerate(server){
+  if(!window.confirm(tr('¿Regenerar el mundo de «'+server.name+'»? El terreno, los inventarios y el progreso de misiones empezarán desde cero. El mundo actual se archivará.')))return;
+  const base='/api/servers/'+server.id+'/reset-world';
+  try{
+   const intent=await api(base+'-intent',{method:'POST',body:'{}'});
+   const dialog=el('resetWorldDialog'),form=el('resetWorldForm'),name=el('resetWorldName');
+   const password=el('resetWorldPassword'),error=el('resetWorldError'),submit=el('resetWorldSubmit');
+   form.reset();error.textContent='';el('resetWorldExpected').textContent=intent.name;
+   form.onsubmit=async event=>{
+    event.preventDefault();
+    if(name.value!==intent.name){error.textContent='Escribe el nombre exacto del servidor.';return;}
+    submit.disabled=true;el('resetWorldCancel').disabled=true;error.textContent='';
+    try{
+     const result=await api(base,{method:'POST',body:JSON.stringify({token:intent.token,name:name.value,password:password.value})});
+     dialog.close();showToast(result.message);
+    }catch(e){error.textContent=e.message;}finally{password.value='';submit.disabled=false;el('resetWorldCancel').disabled=false;}
+   };
+   el('resetWorldCancel').onclick=()=>dialog.close();
+   dialog.oncancel=event=>{if(submit.disabled)event.preventDefault();};
+   dialog.onclose=()=>{form.reset();form.onsubmit=null;};
+   dialog.showModal();
+  }catch(error){showToast(error.message,true);}
+ }
  async function loadHome(){
   if(loading||document.hidden)return;loading=true;
   try{
    inventory=await api('/api/servers');const cards=el('serverCards');const signature=JSON.stringify(inventory.servers);if(signature!==cardsSignature){cardsSignature=signature;cards.replaceChildren();
    for(const server of inventory.servers){
-    const card=make('article',undefined,'section-card server-card');const heading=make('div',undefined,'section-title');const title=make('h3',server.name);const badge=make('span',server.busy?'Instalando…':server.online?'En línea':server.status==='failed'?'Instalación fallida':'Apagado','count-pill'+(server.online?' online':''));heading.append(title,badge);
+    const card=make('article',undefined,'section-card server-card');const heading=make('div',undefined,'section-title');const title=make('h3',server.name);const badge=make('span',server.busy?'Instalando…':server.online?'En línea':server.status==='failed'?'Instalación fallida':'Apagado','count-pill'+(server.online?' online':''));const nameGroup=make('div',undefined,'server-card-name');
+    if(server.hasIcon){const image=make('img',undefined,'server-card-icon');image.width=38;image.height=38;image.alt='';image.src='/api/servers/'+encodeURIComponent(server.id)+'/icon';image.addEventListener('error',()=>image.remove(),{once:true});nameGroup.append(image);}
+    nameGroup.append(title);
+    if(!server.legacy){
+     const pencil=make('button',undefined,'button ghost server-name-edit');pencil.type='button';pencil.disabled=server.busy;
+     pencil.title='Editar nombre';pencil.setAttribute('aria-label','Editar nombre de '+server.name);
+     pencil.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5 4 4M4 20l4-.8L20 7l-4-4L4.8 15z"/></svg>';
+     pencil.addEventListener('click',()=>showRename(server));nameGroup.append(pencil);
+    }
+    heading.append(nameGroup,badge);
     const meta=make('p',`${loaderName(server.loader)} · Minecraft ${server.minecraftVersion}${server.loaderVersion?' · '+server.loaderVersion:''}`,'muted');const address=make('code',server.publicAddress,'server-card-address');
     const addressLine=make('div',undefined,'server-address-line');const reveal=make('button',document.body.classList.contains('hide-addresses')?'Mostrar':'Ocultar','button secondary small-button address-reveal');reveal.type='button';reveal.dataset.revealAddress='';reveal.dataset.addressName=server.name;reveal.setAttribute('aria-label','Mostrar dirección de '+server.name);addressLine.append(address,reveal);
     const stats=make('p',`${server.memoryMb/1024} GB RAM máxima${server.legacy?' · Servidor original':''}`,'hint');const buttons=make('div',undefined,'inline-actions');
     const manage=make('button','Administrar','button primary');manage.type='button';manage.disabled=server.status!=='ready'||server.busy;manage.addEventListener('click',()=>openServer(server.id));
     const network=make('button','Conexión','button secondary');network.type='button';network.disabled=server.status!=='ready';network.addEventListener('click',()=>openConnection(server));buttons.append(manage,network);
+    if(!server.legacy){const clone=make('button','Clonar servidor','button secondary');clone.type='button';clone.disabled=server.busy||server.status!=='ready';clone.addEventListener('click',()=>cloneServer(server,clone));buttons.append(clone);}
     if(!server.legacy){const platform=make('button','Versión y loader','button ghost');platform.type='button';platform.disabled=server.busy||server.status!=='ready';platform.addEventListener('click',()=>openWizard(server));buttons.append(platform);}
+    if(!server.legacy&&server.status==='ready'){
+     const auto=make('button',server.autoStart?'Arranque automático · Activo':'Arranque automático','button '+(server.autoStart?'primary':'secondary'));
+     auto.type='button';auto.disabled=server.busy;auto.setAttribute('aria-pressed',String(server.autoStart));
+     auto.title=server.autoStart?'Desactivar arranque automático':'Activar y sustituir la selección anterior';
+     auto.addEventListener('click',()=>toggleAutoStart(server,auto));buttons.append(auto);
+    }
     if(server.status==='failed'){const retry=make('button','Reintentar instalación','button secondary');retry.type='button';retry.addEventListener('click',async()=>{try{const data=await api('/api/servers/'+server.id+'/retry',{method:'POST',body:'{}'});watch(data.jobId);}catch(e){showToast(e.message,true);}});buttons.append(retry);}
     const remove=make('button','Eliminar','button danger');remove.type='button';remove.disabled=server.legacy||server.busy;remove.title=server.legacy?'El servidor original contiene el panel y está protegido.':server.online?'Apaga el servidor antes de eliminarlo.':'Eliminar con dos confirmaciones';remove.setAttribute('aria-label','Eliminar '+server.name);remove.addEventListener('click',()=>removeServer(server));buttons.append(remove);
     card.append(heading,meta,addressLine,stats);if(server.error)card.append(make('p',server.error,'error-text'));card.append(buttons);cards.append(card);
@@ -41,12 +114,16 @@
  }
  function beginHome(){stopPolling();if(window.LobodkFeatures)window.LobodkFeatures.activate('home');else window.addEventListener('features-ready',()=>window.LobodkFeatures.activate('home'),{once:true});window.LobodkNetwork?.setActive(false);window.LobodkPlayerTools?.setActive(false);activeView='home';document.body.classList.add('manager-home');document.querySelectorAll('.view').forEach(n=>n.classList.toggle('active',n.id==='view-home'));document.querySelector('.topbar .brand h1').textContent="Wolf MC Panel";document.querySelector('.topbar .brand .eyebrow').textContent='CENTRO DE SERVIDORES';el('breadcrumbCurrent').textContent='Servidores';el('serverStatus').textContent='Panel local';el('serverBadge').classList.remove('checking','online','offline');el('rconNotice').classList.add('hidden');loadHome();clearInterval(homeTimer);homeTimer=setInterval(()=>{if((window.LobodkNavigation?.homeTab()||'servers')==='servers')loadHome();},10000);const saved=sessionStorage.getItem('manager-active-job');if(saved)watch(saved);}
  async function serverContext(){
-  try{const data=await api('/api/servers/'+encodeURIComponent(selectedServerId));const s=data.server;document.querySelector('.topbar .brand h1').textContent=s.name;document.querySelector('.topbar .brand .eyebrow').textContent=loaderName(s.loader).toUpperCase()+' · '+s.minecraftVersion;document.title=s.name+' · Panel';
+  try{const data=await api('/api/servers/'+encodeURIComponent(selectedServerId));const s=data.server;el('overviewServerName').textContent=s.name;document.querySelector('.topbar .brand h1').textContent=s.name;document.querySelector('.topbar .brand .eyebrow').textContent=loaderName(s.loader).toUpperCase()+' · '+s.minecraftVersion;document.title=s.name+' · Panel';
    for(const selector of ['.hero-status-strip','.hero-server-badge']){const node=document.querySelector(selector);if(node)node.textContent=loaderName(s.loader)+' · '+s.minecraftVersion;}
    const hero=document.querySelector('.hero-badge');if(hero){const child=hero.querySelector('strong');if(child)child.textContent=loaderName(s.loader)+' · '+s.minecraftVersion;}
    const addresses=document.querySelectorAll('.addresses-card .address-row');for(const [index,address] of [s.localAddress,s.publicAddress].entries()){const row=addresses[index];if(row){row.querySelector('code').textContent=address;row.querySelector('[data-copy]').dataset.copy=address;}}
    el('overviewPort').textContent=String(s.serverPort);
    const platformBadge=document.querySelector('.hero-meta>strong');if(platformBadge)platformBadge.textContent=loaderName(s.loader)+' · '+s.minecraftVersion;
+   const reset=el('resetWorldButton');
+   reset.hidden=s.legacy;
+   reset.classList.toggle('hidden',s.legacy);
+   reset.onclick=()=>regenerate(s);
    if(!s.legacy)el('neoForgeCurrent').closest('.section-card').classList.add('hidden');
    if(s.loader==='vanilla'){document.body.classList.add('vanilla-server');el('checkModUpdatesButton').disabled=true;el('updateAllModsButton').disabled=true;el('uploadForm').classList.add('hidden');}
   }catch(e){showToast(e.message,true);}

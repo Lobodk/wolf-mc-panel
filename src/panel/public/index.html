@@ -25,7 +25,7 @@
   <script src="/migration-ui.js" defer></script>
   <script src="/recovery-ui.js?v=1.0.8" defer></script>
   <link rel="stylesheet" href="/i18n.css">
-  <link rel="stylesheet" href="/layout.css?v=roomier-sidebar">
+  <link rel="stylesheet" href="/layout.css?v=server-controls">
   <script src="/i18n.js" defer></script>
 </head>
 <body class="hide-addresses voxel-panel">
@@ -236,8 +236,8 @@
             <div class="overview-heading-copy"><svg class="icon pixel-icon" aria-hidden="true"><use href="#i-grass"></use></svg><div><h2>Resumen del servidor</h2><p class="muted">Todo listo para tu próxima aventura.</p></div></div>
             <button id="refreshButton" class="button secondary" type="button"><svg class="icon " aria-hidden="true"><use href="#i-refresh"></use></svg> Actualizar</button>
           </div>
-          <section class="world-hero" aria-label="Tu mundo, bajo control">
-            <div class="hero-copy"><h2>Tu mundo, bajo control.</h2><div class="hero-meta"><svg class="icon " aria-hidden="true"><use href="#i-hammer"></use></svg><strong>NEOFORGE · 26.3</strong><span class="hero-divider"></span><span id="heroStatusBadge" class="hero-status"><span class="status-dot"></span><span id="heroStatus">Comprobando…</span></span></div></div>
+          <section class="world-hero" aria-labelledby="overviewServerName">
+            <div class="hero-copy"><h2 id="overviewServerName"></h2><div class="hero-meta"><svg class="icon " aria-hidden="true"><use href="#i-hammer"></use></svg><strong>NEOFORGE · 26.3</strong><span class="hero-divider"></span><span id="heroStatusBadge" class="hero-status"><span class="status-dot"></span><span id="heroStatus">Comprobando…</span></span></div></div>
           </section>
           <div class="stats-grid overview-stats">
             <article class="stat-card server-stat"><svg class="icon pixel-icon" aria-hidden="true"><use href="#i-grass"></use></svg><div><span class="stat-label">ESTADO DEL SERVIDOR</span><strong id="overviewState">—</strong><span id="overviewPlayers" class="muted">Comprobando jugadores…</span></div></article>
@@ -249,7 +249,7 @@
               <div class="section-title"><h3><svg class="icon " aria-hidden="true"><use href="#i-server"></use></svg> Control del servidor</h3><span id="controlStatusBadge" class="status-badge compact-badge"><span class="status-dot"></span><span id="controlStatus">Comprobando…</span></span></div>
               <p id="serverMessage">Comprobando el estado del servidor…</p>
               <p class="hint">Iniciar arranca el servidor apagado. Reiniciar guarda el mundo y vuelve a cargar los mods.</p>
-              <div class="server-actions"><button id="startButton" class="button primary" type="button"><svg class="icon " aria-hidden="true"><use href="#i-play"></use></svg> Iniciar servidor</button><button id="restartButton" class="button warning" type="button"><svg class="icon " aria-hidden="true"><use href="#i-refresh"></use></svg> Reiniciar</button><button id="stopButton" class="button danger" type="button"><svg class="icon " aria-hidden="true"><use href="#i-power"></use></svg> Apagar</button></div>
+              <div class="server-actions"><button id="startButton" class="button primary" type="button"><svg class="icon " aria-hidden="true"><use href="#i-play"></use></svg> Iniciar servidor</button><button id="restartButton" class="button warning" type="button"><svg class="icon " aria-hidden="true"><use href="#i-refresh"></use></svg> Reiniciar</button><button id="stopButton" class="button danger" type="button"><svg class="icon " aria-hidden="true"><use href="#i-power"></use></svg> Apagar</button><button id="resetWorldButton" class="button danger hidden" type="button" hidden>Regenerar mundo…</button></div>
             </article>
             <article class="section-card connected-card"><div class="section-title"><h3><svg class="icon " aria-hidden="true"><use href="#i-users"></use></svg> Jugadores conectados</h3><span id="overviewPlayersCount" class="count-pill">—</span></div><ul id="overviewConnectedPlayers" class="overview-player-list"><li class="empty-row">Comprobando jugadores…</li></ul></article>
           </div>
@@ -618,5 +618,31 @@
   </dialog>
   <div id="toast" class="toast" role="status"></div>
   </div>
+<dialog id="renameServerDialog" class="manager-dialog" aria-labelledby="renameServerTitle">
+  <form id="renameServerForm">
+    <h2 id="renameServerTitle">Editar nombre del servidor</h2>
+    <label>Nombre en el panel<input id="renameServerName" type="text" maxlength="80" required autofocus></label>
+    <p id="renameServerError" class="error-text" role="alert"></p>
+    <div class="inline-actions">
+      <button id="renameServerCancel" type="button" class="button secondary">Cancelar</button>
+      <button id="renameServerSubmit" type="submit" class="button primary">Guardar nombre</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="resetWorldDialog" class="manager-dialog" aria-labelledby="resetWorldTitle">
+  <form id="resetWorldForm" class="section-card">
+    <h2 id="resetWorldTitle">Confirmar regeneración</h2>
+    <p>El mundo anterior quedará archivado. Se conservan los mods, la configuración y el libro de misiones. El progreso empieza de cero.</p>
+    <p>Escribe el nombre exacto que se muestra debajo y confirma con la contraseña del panel.</p>
+    <p><strong id="resetWorldExpected"></strong></p>
+    <label>Nombre del servidor<input id="resetWorldName" type="text" maxlength="80" required autocomplete="off" autofocus></label>
+    <label>Contraseña del panel<input id="resetWorldPassword" type="password" maxlength="512" required autocomplete="current-password"></label>
+    <p id="resetWorldError" class="error-text" role="alert"></p>
+    <div class="inline-actions">
+      <button id="resetWorldCancel" type="button" class="button secondary">Cancelar</button>
+      <button id="resetWorldSubmit" type="submit" class="button danger">Regenerar mundo</button>
+    </div>
+  </form>
+</dialog>
 </body>
 </html>

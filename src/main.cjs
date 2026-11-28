@@ -77,9 +77,15 @@ async function start({dataDir=defaultDataDir(),port=Number(process.env.WOLF_PANE
      // Preserve running Minecraft processes; shutting this panel never deletes worlds.
      send(res,200,{ok:true,message:'Cerrando el panel. Los servidores de Minecraft no se apagan con esta acción.'});setImmediate(()=>close());return;
     }
+    if(req.method==='POST'&&/^\/api\/servers\/[0-9a-f-]{36}\/reset-world$/.test(url.pathname)){
+     const check=await main.readJson(req);
+     rateLimit(req);
+     if(!await auth.verify(check.password))return send(res,403,{error:'La contraseña del panel no es correcta.'});
+     req.verifiedWorldReset={token:check.token,name:check.name};
+    }
     if(await manager.handle(req,res,url))return;
     const id=req.headers['x-server-id']||(legacy?'main':'');if(typeof id!=='string'||!id||id==='main'&&!legacy)return send(res,400,{error:'Selecciona un servidor creado en esta instalación.'});
-    return id===migration?.id?await manager.route(id,req,res,url):await manager.instance(id).handleApi(req,res,url);
+    return id!=='main'?await manager.route(id,req,res,url):await manager.instance(id).handleApi(req,res,url);
    }
    if(req.method==='GET')return main.staticFile(res,url.pathname,req);
    return send(res,405,{error:'Método no permitido.'});
@@ -100,6 +106,7 @@ async function start({dataDir=defaultDataDir(),port=Number(process.env.WOLF_PANE
 }
 module.exports={start};
 if(require.main===module)start().then(app=>{
+ if(process.argv.includes('--start-configured-server'))app.manager.startAutomatic().catch(error=>console.error(error.message));
  console.log('Wolf MC Panel escuchando en '+app.address.url);
  for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>app.close().then(()=>process.exit(0)));
 }).catch(error=>{console.error(error.message);process.exitCode=1;});

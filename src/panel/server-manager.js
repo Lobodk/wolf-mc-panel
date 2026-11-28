@@ -2,6 +2,8 @@
 const fs=require('node:fs'),fsp=require('node:fs/promises'),path=require('node:path'),os=require('node:os'),net=require('node:net'),crypto=require('node:crypto'),dns=require('node:dns/promises');
 const {spawn,execFile}=require('node:child_process');const {promisify}=require('node:util');const run=promisify(execFile);
 const catalogs=require('./server-catalog');
+const {validateIcon}=require('./server-features');
+const {prepareClone,regenerateWorld}=require('./server-worlds');
 const {prepareRegistryBridge}=require('./registry-bridge');
 const {preconfiguredNetwork,currentWarnings}=require('./network-preconfiguration');
 const validId=id=>typeof id==='string'&&(id==='main'||/^[0-9a-f-]{36}$/.test(id));
@@ -23,14 +25,32 @@ function createServerManager({main,factory,codeDir,catalogProvider=catalogs,prob
  if(includeLegacy&&!records.some(r=>r.id==='main'))records.unshift({id:'main',name:"Lobodk's Server",directory:mainDir,minecraftVersion:'26.3',loader:'neoforge',loaderVersion:(/neoforge[\\/]([^\\/\r\n]+)[\\/]win_args/.exec(fs.readFileSync(path.join(mainDir,'run.bat'),'utf8'))||[])[1]||'',serverPort:main.config.serverPort,rconPort:main.config.rconPort,publicHost:localAddresses()[0]||'127.0.0.1',externalPort:main.config.serverPort,status:'ready',memoryMb:16384,createdAt:new Date().toISOString(),legacy:true});
  for(const r of records){if(!validId(r.id))throw Error('ID de servidor inválido.');if(r.id!=='main'&&path.resolve(r.directory)!==path.join(baseDir,r.id))throw Error('Carpeta de servidor fuera del directorio gestionado.');if(r.status==='installing'){r.status='failed';r.error='La instalación se interrumpió al cerrar el panel. Puedes reintentarla.';}}
  const save=()=>write(registryFile,records);save();
+ let autoStartId=records.find(r=>r.autoStart===true&&!r.legacy&&r.status==='ready')?.id;
+ function updateAutoStart(r,enabled){
+  if(r.legacy||r.status!=='ready'||busy.has(r.id))fail('Servidor no disponible para configurar el arranque.',409);
+  if(typeof enabled!=='boolean')fail('Preferencia de arranque no válida.');
+  if(!enabled&&autoStartId!==r.id)return;
+  const previous=records.map(entry=>entry.autoStart);
+  const next=enabled?r.id:undefined;
+  for(const entry of records)entry.autoStart=entry.id===next;
+  try{save();autoStartId=next;}catch(error){records.forEach((entry,i)=>{entry.autoStart=previous[i];});throw error;}
+ }
+ async function startAutomatic(){
+  const selected=records.find(r=>r.id===autoStartId&&r.status==='ready');
+  if(!selected||travelling(selected.id)||busy.has(selected.id))return null;
+  if(moved(selected))await nativeHosting.context().ensure();
+  if(selected.id!==autoStartId||travelling(selected.id))return null;
+  await instance(selected.id).startIfStopped();
+  return selected.name;
+ }
  function record(id){if(!validId(id))fail('Servidor no válido.',404);const r=records.find(r=>r.id===id);if(!r)fail('Servidor no encontrado.',404);return r;}
  function processAlive(r){try{const meta=JSON.parse(fs.readFileSync(path.join(r.directory,'panel/managed-process.json'),'utf8'));if(!Number.isInteger(meta.pid)||meta.pid<=0)return false;process.kill(meta.pid,0);return true;}catch{return false;}}
- function publicRecord(r){const local=localAddresses();let memoryMb=r.memoryMb;try{const match=/-Xmx(\d+)([gm])/i.exec(fs.readFileSync(path.join(r.directory,'user_jvm_args.txt'),'utf8'));if(match)memoryMb=Number(match[1])*(match[2].toLowerCase()==='g'?1024:1);}catch{}return {id:r.id,name:r.name,minecraftVersion:r.minecraftVersion,loader:r.loader,loaderVersion:r.loaderVersion||'',serverPort:r.serverPort,externalPort:r.externalPort,publicHost:r.publicHost,localAddress:(r.bindAddress||local[0]||'127.0.0.1')+':'+r.serverPort,publicAddress:r.publicHost+(r.externalPort===25565?'':':'+r.externalPort),memoryMb,status:r.status,error:r.error||'',busy:busy.has(r.id),legacy:Boolean(r.legacy),eulaAccepted:Boolean(r.eulaAccepted||r.legacy),createdAt:r.createdAt,bindAddress:r.bindAddress||''};}
+ function publicRecord(r){const local=localAddresses();let memoryMb=r.memoryMb;try{const match=/-Xmx(\d+)([gm])/i.exec(fs.readFileSync(path.join(r.directory,'user_jvm_args.txt'),'utf8'));if(match)memoryMb=Number(match[1])*(match[2].toLowerCase()==='g'?1024:1);}catch{}return {id:r.id,name:r.name,autoStart:r.id===autoStartId,hasIcon:fs.existsSync(path.join(r.directory,'server-icon.png')),minecraftVersion:r.minecraftVersion,loader:r.loader,loaderVersion:r.loaderVersion||'',serverPort:r.serverPort,externalPort:r.externalPort,publicHost:r.publicHost,localAddress:(r.bindAddress||local[0]||'127.0.0.1')+':'+r.serverPort,publicAddress:r.publicHost+(r.externalPort===25565?'':':'+r.externalPort),memoryMb,status:r.status,error:r.error||'',busy:busy.has(r.id),legacy:Boolean(r.legacy),eulaAccepted:Boolean(r.eulaAccepted||r.legacy),createdAt:r.createdAt,bindAddress:r.bindAddress||''};}
  function assertFree(port,id,field){for(const r of records){if(r.id===id)continue;if([r.serverPort,r.rconPort].includes(port))fail('Ese puerto ya está reservado por '+r.name+'.');if(field==='external'&&r.externalPort===port)fail('Ese puerto público ya pertenece a '+r.name+'.');}if(port===main.config.port)fail('Ese puerto pertenece al panel web.');}
- async function allocate(start){for(let p=start;p<=65535;p++){if(p===main.config.port||records.some(r=>[r.serverPort,r.rconPort].includes(p)))continue;if(!await probe(p))return p;}fail('No se encuentra un puerto libre.');}
+ async function allocate(start,external=false){for(let p=start;p<=65535;p++){if(p===main.config.port||records.some(r=>[r.serverPort,r.rconPort,...(external?[r.externalPort]:[])].includes(p)))continue;if(!await probe(p))return p;}fail('No se encuentra un puerto libre.');}
  const moved = r => r.id===nativeHosting?.id && nativeHosting.owner().owner==='primary';
  const travelling = id => id===nativeHosting?.id && nativeHosting.blocked();
- const activeRequests=new Map();
+ const activeRequests=new Map(),worldLocks=new Set(),resetIntents=new Map();
  async function track(id,work){
   activeRequests.set(id,(activeRequests.get(id)||0)+1);
   try{return await work();}
@@ -39,11 +59,12 @@ function createServerManager({main,factory,codeDir,catalogProvider=catalogs,prob
  function instance(id){const r=record(id);if(r.status!=='ready')fail(r.error||'El servidor todavía no está instalado.',409);if(instances.has(id))return instances.get(id);
   const remote=moved(r)?nativeHosting.context():null;
   const allowsHandoff=()=>r.id===nativeHosting?.id&&nativeHosting.allowsLocalHandoff();
-  const obj=factory({serverDir:remote?.root||r.directory,panelDir:path.join(r.directory,'panel'),record:r,appDataDir:stateDir,panelToken:main.config.panelToken,backupId:r.name.replace(/[^a-zA-Z0-9_-]+/g,'-')+'-'+r.id.slice(0,8),javaHome:r.javaHome,launch:remote?.start||(handoff=>launch(r,handoff)),remote,allowsHandoff,externalBusy:()=>busy.has(id)||travelling(id)});instances.set(id,obj);return obj;}
+  const obj=factory({serverDir:remote?.root||r.directory,panelDir:path.join(r.directory,'panel'),record:r,appDataDir:stateDir,panelToken:main.config.panelToken,backupId:(r.backupLabel||r.name).replace(/[^a-zA-Z0-9_-]+/g,'-')+'-'+r.id.slice(0,8),javaHome:r.javaHome,launch:remote?.start||(handoff=>launch(r,handoff)),remote,allowsHandoff,externalBusy:()=>busy.has(id)||travelling(id)});instances.set(id,obj);return obj;}
  async function route(id,req,res,url){
   const r=record(id);
   const work=async()=>{
    if(travelling(id) && req.method!=='GET')fail('Hay un traslado pendiente de Minecraft.',409);
+   if(worldLocks.has(id)&&req.method!=='GET')fail('Hay una operación de mundo en curso.',409);
    if(moved(r))await nativeHosting.context().ensure();
    if(travelling(id)&&req.method!=='GET')fail('Hay un traslado pendiente de Minecraft.',409);
    return await instance(id).handleApi(req,res,url);
@@ -151,6 +172,80 @@ function createServerManager({main,factory,codeDir,catalogProvider=catalogs,prob
   if(busy.has(r.id)||instances.get(r.id)?.isBusy())fail('Espera a que termine el mantenimiento de este servidor.',409);
   if(await probe(r.serverPort)||processAlive(r))fail('Apaga este servidor y espera a que Java termine antes de eliminarlo.',409);
  }
+ async function managedWorld(r){
+  if(r.legacy||r.status!=='ready')fail('Solo está disponible para servidores gestionados y preparados.',409);
+  if(moved(r)||travelling(r.id))fail('Devuelve el servidor al PC secundario antes de continuar.',409);
+  if(!await canonicalChild(r.directory,baseDir,r.id))fail('La carpeta del servidor no es válida.',409);
+ }
+ async function withWorldLock(r,work){
+  if(busy.has(r.id)||instances.get(r.id)?.isBusy()||(activeRequests.get(r.id)||0)>1)
+   fail('Espera a que termine el mantenimiento del servidor.',409);
+  worldLocks.add(r.id);busy.add(r.id);
+  try{await managedWorld(r);return await work();}
+  finally{busy.delete(r.id);worldLocks.delete(r.id);}
+ }
+ const freshSeed=()=>crypto.randomBytes(8).readBigInt64BE().toString();
+ async function cloneServer(r,data){
+  if(creating||records.length>=20)fail('Espera a la creación actual o libera un espacio en el panel.',409);
+  const name=String(data.name||'').trim();
+  if(!name||name.length>80||/[\x00-\x1f\\]/.test(name))fail('Nombre de servidor no válido.');
+  creating=true;
+  try{return await withWorldLock(r,async()=>{
+   const serverPort=await allocate(25565,true);
+   const rconPort=await allocate(Math.max(26575,serverPort+1));
+   assertFree(serverPort,null,'external');
+   const id=crypto.randomUUID(),directory=path.join(baseDir,id),stage=path.join(baseDir,'.clone-'+id);
+   const entry={...r,id,name,directory,serverPort,rconPort,externalPort:serverPort,seed:freshSeed(),
+    memoryMb:Math.min(publicRecord(r).memoryMb,8192),configureFirewall:false,configureUpnp:false,
+    networkWarnings:[],error:'',createdAt:new Date().toISOString()};
+   delete entry.backupLabel;
+   delete entry.autoStart;
+   let published=false;
+   try{
+    await prepareClone(r.directory,stage,entry,rconPort);
+    if(await probe(serverPort)||await probe(rconPort))fail('Uno de los puertos del clon ya está ocupado.',409);
+    assertFree(serverPort,null,'external');assertFree(rconPort);
+    await fsp.rename(stage,directory);published=true;
+    records.push(entry);save();
+   }catch(error){
+    records=records.filter(item=>item.id!==id);
+    const target=published?directory:stage;
+    if(path.dirname(path.resolve(target))!==path.resolve(baseDir))throw Error('Ruta temporal no válida');
+    await fsp.rm(target,{recursive:true,force:true});
+    throw error;
+   }
+   return {server:publicRecord(entry),message:'Clon creado. Su mundo se generará al iniciar Minecraft.'};
+  });}finally{creating=false;}
+ }
+ async function checkReset(r){
+  await managedWorld(r);
+  if(await probe(r.serverPort)||processAlive(r))fail('Apaga este servidor antes de regenerar el mundo.',409);
+ }
+ async function resetIntent(r){
+  await checkReset(r);
+  for(const [token,intent] of resetIntents)if(intent.expires<Date.now()||intent.id===r.id)resetIntents.delete(token);
+  const token=crypto.randomBytes(24).toString('hex');
+  resetIntents.set(token,{id:r.id,expires:Date.now()+180000});
+  return {token,name:r.name};
+ }
+ async function resetWorld(r,data){
+  const intent=resetIntents.get(data.token);
+  if(!intent||intent.id!==r.id||intent.expires<Date.now())fail('La confirmación ha caducado. Vuelve a abrir Regenerar mundo.',409);
+  if(data.name!==r.name)fail('El nombre del servidor no coincide.');
+  resetIntents.delete(data.token);
+  return withWorldLock(r,async()=>{
+   await checkReset(r);
+   const base=path.join(stateDir,'previous-worlds');
+   await fsp.mkdir(base,{recursive:true});
+   if(!await canonicalChild(base,path.dirname(base),path.basename(base)))fail('Carpeta de recuperación no válida.',409);
+   const archive=path.join(base,r.id+'-'+Date.now()+'-'+crypto.randomUUID());
+   await fsp.mkdir(archive);
+   const seed=freshSeed();
+   await regenerateWorld(r.directory,archive,seed);
+   r.seed=seed;save();
+   return {message:'Mundo preparado para el siguiente arranque. El anterior está en la carpeta previous-worlds de los datos del panel.',archive};
+  });
+ }
  async function deleteIntent(r){await canDelete(r);for(const [key,value]of deleteIntents)if(value.expiresAt<Date.now()||value.serverId===r.id)deleteIntents.delete(key);const token=crypto.randomBytes(32).toString('hex');deleteIntents.set(token,{serverId:r.id,expiresAt:Date.now()+120000});return {token,name:r.name,expiresInSeconds:120};}
  async function deleteServer(r,data){
   const intent=deleteIntents.get(data.token);if(!intent||intent.serverId!==r.id||intent.expiresAt<Date.now())fail('La confirmación ha caducado. Vuelve a pulsar Eliminar.',409);
@@ -167,7 +262,7 @@ function createServerManager({main,factory,codeDir,catalogProvider=catalogs,prob
     instances.get(r.id)?.close();instances.delete(r.id);await fsp.rename(source,destination);moved=true;
     write(path.join(destination,'panel/deleted-server-record.json'),{...r,deletedAt:new Date().toISOString(),originalDirectory:source});
    }
-   records=records.filter(entry=>entry.id!==r.id);save();return {ok:true,message:'Servidor eliminado del panel. Sus archivos se conservan en la carpeta Servidores eliminados.',recoverable:moved};
+   records=records.filter(entry=>entry.id!==r.id);save();if(autoStartId===r.id)autoStartId=undefined;return {ok:true,message:'Servidor eliminado del panel. Sus archivos se conservan en la carpeta Servidores eliminados.',recoverable:moved};
   }catch(error){records=originalRecords;if(moved)await fsp.rename(destination,r.directory);throw error;}finally{busy.delete(r.id);}
  }
  let hostCache=null,hostPending=null,cpuBefore=null,processBefore=new Map();
@@ -193,7 +288,7 @@ function createServerManager({main,factory,codeDir,catalogProvider=catalogs,prob
   let properties=await fsp.readFile(path.join(dest,'server.properties'),'utf8');for(const [key,value]of Object.entries({'server-port':gamePort,'rcon.port':rconPort,'rcon.password':cfg.rconPassword,'server-ip':cfg.rconHost==='127.0.0.1'?'':cfg.rconHost}))properties=prop(properties,key,value);await fsp.writeFile(path.join(dest,'server.properties'),properties);
   const agent=path.join(dest,'panel/registry-agent.properties');if(fs.existsSync(agent))await fsp.writeFile(agent,prop(prop(await fsp.readFile(agent,'utf8'),'port',rconPort),'host',cfg.rconHost));
   write(path.join(dest,'panel/managed-process.json'),{pid:0,restoredAt:Date.now()});
-  Object.assign(r,{directory:dest,serverPort:gamePort,rconPort,externalPort,publicHost,bindAddress:cfg.rconHost==='127.0.0.1'?'':cfg.rconHost,status:'ready',error:'',networkWarnings:[],restoredAt:new Date().toISOString()});delete r.deletedAt;delete r.originalDirectory;records.push(r);try{save();}catch(error){records=records.filter(v=>v.id!==r.id);throw error;}
+  Object.assign(r,{autoStart:false,directory:dest,serverPort:gamePort,rconPort,externalPort,publicHost,bindAddress:cfg.rconHost==='127.0.0.1'?'':cfg.rconHost,status:'ready',error:'',networkWarnings:[],restoredAt:new Date().toISOString()});delete r.deletedAt;delete r.originalDirectory;records.push(r);try{save();}catch(error){records=records.filter(v=>v.id!==r.id);throw error;}
   const coverage=preconfiguredNetwork(codeDir,r,localAddresses());return {ok:true,server:publicRecord(r),networkReviewRequired:!coverage.firewall||!coverage.router,message:'Servidor restaurado y apagado. Revisa la conexión antes de iniciarlo.'};
  }catch(error){if(moved){for(const [name,bytes]of previousFiles)await fsp.writeFile(path.join(dest,name),bytes);await fsp.rename(dest,source);}throw error;}finally{creating=false;}}
 
@@ -207,12 +302,47 @@ function createServerManager({main,factory,codeDir,catalogProvider=catalogs,prob
   if(p==='/api/servers'&&req.method==='GET'){send(res,200,{servers:await Promise.all(records.map(async r=>({...publicRecord(r),online:moved(r)?await nativeHosting.context().isOnline().catch(()=>false):await probe(r.serverPort)}))),suggestedPort:await allocate(25565),localAddresses:localAddresses(),physicalMemoryMb:Math.floor(os.totalmem()/1048576)});return true;}
   if(p==='/api/servers'&&req.method==='POST'){send(res,202,await create(await main.readJson(req)));return true;}
   const jobMatch=/^\/api\/server-jobs\/([0-9a-f-]{36})$/.exec(p);if(jobMatch&&req.method==='GET'){const j=jobs.get(jobMatch[1]);if(!j)fail('No se encuentra esa operación. Revisa el estado del servidor.',404);const r=records.find(r=>r.id===j.serverId);if(j.done&&j.ok&&r){const coverage=preconfiguredNetwork(codeDir,r,localAddresses());send(res,200,{...j,warnings:currentWarnings(j.warnings,coverage),phase:currentWarnings(j.warnings,coverage).length?'Servidor preparado · revisar conexión':'Servidor preparado',networkMessage:coverage.firewall&&coverage.router?'Puerto cubierto por las reglas manuales de Windows y del router. No necesita UPnP.':j.networkMessage});}else send(res,200,j);return true;}
-  const match=/^\/api\/servers\/([^/]+)(?:\/(connection|network|firewall|upnp|platform|retry|delete-intent))?$/.exec(p);if(!match)return false;const r=record(match[1]),action=match[2];
+  const match=/^\/api\/servers\/([^/]+)(?:\/(connection|network|firewall|upnp|platform|retry|delete-intent|clone|reset-world-intent|reset-world|name|icon|autostart))?$/.exec(p);if(!match)return false;const r=record(match[1]),action=match[2];
+  if(action==='autostart'&&req.method==='PUT'){
+   const settings=await main.readJson(req);
+   updateAutoStart(r,settings.enabled);
+   send(res,200,{server:publicRecord(r),autoStartId:autoStartId||null});return true;
+  }
+  if(action==='name'&&req.method==='PUT'){
+   if(r.legacy||busy.has(r.id))fail('Espera a que termine la operación del servidor.',409);
+   const data=await main.readJson(req);
+   const name=typeof data.name==='string'?data.name.trim():'';
+   if(!name||name.length>80||/[\x00-\x1f\x7f]/.test(name))fail('Escribe un nombre válido de hasta 80 caracteres.');
+   if(busy.has(r.id)||!records.includes(r))fail('El servidor ya no está disponible para editar.',409);
+   const previous={name:r.name,backupLabel:r.backupLabel};
+   if(name!==r.name){
+    if(!r.backupLabel)r.backupLabel=r.name;
+    r.name=name;
+    try{save();}catch(error){Object.assign(r,previous);throw error;}
+   }
+   send(res,200,{server:publicRecord(r)});return true;
+  }
+  if(action==='icon'&&req.method==='GET'){
+   const file=path.join(r.directory,'server-icon.png');
+   let image;
+   try{const stat=await fsp.stat(file);if(!stat.isFile()||stat.size>1024*1024)throw Error('Icono no válido');
+    image=await fsp.readFile(file);validateIcon(image);}
+   catch{fail('El servidor no tiene un icono disponible.',404);}
+   res.writeHead(200,{'Content-Type':'image/png','Content-Length':image.length});
+   res.end(image);return true;
+  }
   if((moved(r)||travelling(r.id))&&req.method!=='GET')fail('Devuelve el servidor al equipo del panel para modificar su instalación.',409);
   if(r.id===nativeHosting?.id&&(req.method==='DELETE'||action==='delete-intent'||(action==='connection'&&req.method==='PUT'))) {
    fail('Este servidor está asociado a un perfil de traslado.',409);
   }
   if(!action&&req.method==='GET'){send(res,200,{server:publicRecord(r),localAddresses:localAddresses()});return true;}
+  if(worldLocks.has(r.id)&&req.method!=='GET')fail('Hay una operación de mundo en curso.',409);
+  if(action==='clone'&&req.method==='POST'){send(res,201,await cloneServer(r,await main.readJson(req)));return true;}
+  if(action==='reset-world-intent'&&req.method==='POST'){send(res,200,await resetIntent(r));return true;}
+  if(action==='reset-world'&&req.method==='POST'){
+   if(!req.verifiedWorldReset)fail('Confirma la contraseña del panel.',403);
+   send(res,200,await resetWorld(r,req.verifiedWorldReset));return true;
+  }
   if(action==='delete-intent'&&req.method==='POST'){send(res,200,await deleteIntent(r));return true;}
   if(!action&&req.method==='DELETE'){send(res,200,await deleteServer(r,await main.readJson(req)));return true;}
   if(action==='network'&&req.method==='GET'){send(res,200,await network(r));return true;}
@@ -227,10 +357,10 @@ function createServerManager({main,factory,codeDir,catalogProvider=catalogs,prob
  for(const r of records)if(r.id!=='main'&&r.status==='ready')instance(r.id);
  async function routedHandle(req,res,url){
   const target=/^\/api\/servers\/([^/]+)/.exec(url.pathname)?.[1];
-  if(target&&target===nativeHosting?.id&&req.method!=='GET')return track(target,()=>handle(req,res,url));
+  if(target&&req.method!=='GET')return track(target,()=>handle(req,res,url));
   return handle(req,res,url);
  }
- return {handle:routedHandle,instance,route,create,records:()=>records.map(publicRecord),hostingRecord:record,
+ return {handle:routedHandle,instance,route,create,startAutomatic,records:()=>records.map(publicRecord),hostingRecord:record,
   hostingBusy:id=>busy.has(id)||activeRequests.has(id),
   resetHostingInstance:id=>{instances.get(id)?.close();instances.delete(id);},
   close:()=>{for(const [id,i] of instances)if(id!=='main')i.close();}};

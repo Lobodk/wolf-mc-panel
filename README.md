@@ -35,6 +35,15 @@ Keep independent servers together and choose Minecraft, a loader and connection 
 
 ![Create a Minecraft server](assets/screenshots/create-server.jpg)
 
+### Server controls
+
+Clone an installation into a separate server with a new world. A world reset archives the old world and preserves configured mods, datapacks, and quest definitions. The server must be stopped, and the panel asks for the server name and password. The Windows installer can start one selected server at sign-in.
+
+![Rename a server from its card](assets/screenshots/rename-server.jpg)
+
+![Confirm a world regeneration](assets/screenshots/regenerate-world.jpg)
+
+
 ### Appearance and configuration
 
 Preview a server description with decorative text, colors and gradients, then adjust gameplay, memory and access settings.

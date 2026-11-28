@@ -18,6 +18,15 @@ Las capturas muestran el panel público en inglés con datos de demostración. E
 
 ![Asistente para crear un servidor](../assets/screenshots/create-server.jpg)
 
+### Controles de servidores
+
+Clona una instalación con un mundo nuevo o archiva el mundo actual para empezar de cero. Se conservan los mods, los datapacks y el libro de misiones. Para regenerar, apaga el servidor y confirma su nombre y la contraseña del panel. El instalador de Windows permite arrancar un servidor al iniciar sesión.
+
+![Editar el nombre desde la ficha](../assets/screenshots/rename-server.jpg)
+
+![Confirmar la regeneración de un mundo](../assets/screenshots/regenerate-world.jpg)
+
+
 ### Apariencia y configuración
 
 ![Editor visual del nombre y descripción](../assets/screenshots/appearance.jpg)
